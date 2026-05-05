@@ -10,15 +10,15 @@
   flex: 1;
   height: 100%;
   border: none;
-  border-right: 1px solid var(--border, #2a3050);
+  border-right: 1px solid var(--border, #dde2f0);
 }
 
 .properties-container {
   width: 320px;
   height: 100%;
-  border-left: 1px solid var(--border, #2a3050);
+  border-left: 1px solid var(--border, #dde2f0);
   overflow-y: auto;
-  background: var(--bg-surface, #141720);
+  background: var(--bg-surface, #ffffff);
 }
 
 .button-bar {

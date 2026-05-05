@@ -80,10 +80,10 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.status-running { background: #1a3a5c; color: #60aeff; }
-.status-approved { background: #1a3a2a; color: #4ade80; }
-.status-rejected { background: #3a1a1a; color: #f87171; }
-.status-paused { background: #3a2a10; color: #fbbf24; }
+.status-running  { background: #e0eaff; color: #3451b2; }
+.status-approved { background: #dcfce7; color: #15803d; }
+.status-rejected { background: #fee2e2; color: #b91c1c; }
+.status-paused   { background: #fef3c7; color: #92400e; }
 
 .dept-grid {
   display: grid;
@@ -122,9 +122,9 @@
   letter-spacing: 0.5px;
   flex-shrink: 0;
 }
-.stage-prep    { background: #1a2a4a; color: #60a5fa; }
-.stage-review  { background: #2a1a4a; color: #c084fc; }
-.stage-approve { background: #1a3a2a; color: #4ade80; }
+.stage-prep    { background: #eff6ff; color: #2563eb; }
+.stage-review  { background: #f5f3ff; color: #7c3aed; }
+.stage-approve { background: #f0fdf4; color: #15803d; }
 
 .stage-progress {
   display: flex;
@@ -208,7 +208,7 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--warn);
-  background: #3a2a1020;
+  background: #fffbeb;
   border: 1px solid var(--warn);
   border-radius: var(--radius);
   padding: 8px 12px;

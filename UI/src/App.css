@@ -3,23 +3,23 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-base:    #0d0f14;
-  --bg-surface: #141720;
-  --bg-card:    #1a1f2e;
-  --bg-input:   #1f2435;
-  --border:     #2a3050;
-  --border-bright: #3a4570;
-  --accent:     #4f6ef7;
-  --accent-glow:#4f6ef740;
-  --success:    #22c55e;
-  --danger:     #ef4444;
-  --warn:       #f59e0b;
-  --text-1:     #f0f2ff;
-  --text-2:     #8892b0;
-  --text-3:     #5a6480;
-  --radius:     10px;
-  --radius-lg:  16px;
-  --shadow:     0 4px 24px #00000040;
+  --bg-base:       #f4f6fb;
+  --bg-surface:    #ffffff;
+  --bg-card:       #ffffff;
+  --bg-input:      #f0f3fa;
+  --border:        #dde2f0;
+  --border-bright: #b8c2dc;
+  --accent:        #4361ee;
+  --accent-glow:   #4361ee30;
+  --success:       #16a34a;
+  --danger:        #dc2626;
+  --warn:          #d97706;
+  --text-1:        #0f172a;
+  --text-2:        #475569;
+  --text-3:        #94a3b8;
+  --radius:        10px;
+  --radius-lg:     16px;
+  --shadow:        0 2px 16px #0f172a18;
 }
 
 body {
@@ -208,13 +208,13 @@ body {
 .modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .yaml-block {
-  background: var(--bg-base);
+  background: #f8faff;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 16px;
   font-size: 12px;
   font-family: 'Fira Code', monospace;
-  color: #a6e3a1;
+  color: #1e6b3c;
   overflow: auto;
   max-height: 60vh;
   white-space: pre;
