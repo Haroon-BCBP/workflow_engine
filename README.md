@@ -68,3 +68,9 @@ npm run dev
    - (Admin) Use the **Route Rejection** button to send the workflow back to an earlier stage.
 
 ---
+
+
+## Issues/ Pending
+
+1. Failures at parallel gateways: If a stage is rejected at a parallel gateway We need to consider how to send it previous stage, and also how to handle the other parallel stage which may or may not have been done.
+2. If we need to send from some stage to previous one but the previous one is a parallel stage, should that be considered both stages redo or single just the one.
