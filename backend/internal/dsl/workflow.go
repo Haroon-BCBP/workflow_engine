@@ -41,8 +41,8 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 	deptTransitionChans := make(map[string]workflow.Channel)
 	deptCommentChans := make(map[string]workflow.Channel)
 	for _, d := range def.Departments {
-		deptTransitionChans[d.ID] = workflow.NewBufferedChannel(ctx,1024)
-		deptCommentChans[d.ID] = workflow.NewBufferedChannel(ctx,1024)
+		deptTransitionChans[d.ID] = workflow.NewBufferedChannel(ctx, 1024)
+		deptCommentChans[d.ID] = workflow.NewBufferedChannel(ctx, 1024)
 	}
 
 	workflow.Go(ctx, func(ctx workflow.Context) {
@@ -143,8 +143,12 @@ func processDepartment(
 	logger := workflow.GetLogger(ctx)
 	progress := state.Progress[dept.ID]
 
-	for _, stage := range dept.Stages {
+	stageIdx := 0
+	for stageIdx < len(dept.Stages) {
+		stage := dept.Stages[stageIdx]
+
 		if progress.StageStatus == StageStatusPending && stage.Type != progress.CurrentStage {
+			stageIdx++
 			continue
 		}
 
@@ -158,6 +162,7 @@ func processDepartment(
 		actCtx := workflow.WithActivityOptions(ctx, ao)
 		_ = workflow.ExecuteActivity(actCtx, StageStartedActivity, dept.ID, string(stage.Type)).Get(actCtx, nil)
 
+		var backToPrep bool
 		for {
 			var done bool
 			var wasRejected bool
@@ -173,28 +178,36 @@ func processDepartment(
 					return
 				}
 
-				if sig.ToStage == StageApprove {
-					if stage.Type == StageReview {
-						progress.StageStatus = StageStatusDone
-						done = true
-					} else if stage.Type == StageApprove {
+				switch sig.ToStage {
+				case StageApprove:
+					switch stage.Type {
+					case StageReview:
+						if progress.HasComment {
+							logger.Info("Comments found during review, routing back to prep", "dept", dept.ID)
+							backToPrep = true
+							done = true
+						} else {
+							progress.StageStatus = StageStatusDone
+							done = true
+						}
+					case StageApprove:
 						if stage.RequiresComment && !progress.HasComment {
 							logger.Warn("Cannot approve without a comment", "dept", dept.ID)
 							return
 						}
 						progress.StageStatus = StageStatusDone
 						done = true
-					} else {
+					default:
 						logger.Warn("Cannot approve/advance to approve from this stage", "stage", stage.Type)
 					}
-				} else if sig.ToStage == StageReview {
+				case StageReview:
 					if stage.Type != StagePrep {
 						logger.Warn("Unexpected review transition", "stage", stage.Type)
 						return
 					}
 					progress.StageStatus = StageStatusDone
 					done = true
-				} else if sig.ToStage == "reject" {
+				case "reject":
 					progress.StageStatus = StageStatusRejected
 					state.RejectedBy = dept.ID
 					state.Status = WorkflowPaused
@@ -234,6 +247,20 @@ func processDepartment(
 			}
 		}
 
+		if backToPrep {
+			prepIdx := 0
+			for i, s := range dept.Stages {
+				if s.Type == StagePrep {
+					prepIdx = i
+					break
+				}
+			}
+			progress.StageStatus = StageStatusPending
+			progress.CurrentStage = StagePrep
+			stageIdx = prepIdx
+		} else {
+			stageIdx++
+		}
 	}
 
 	if progress.CurrentStage == StageApprove && progress.StageStatus == StageStatusDone {

@@ -62,9 +62,9 @@ npm run dev
 3. **Submit**: Click **Submit Workflow**. This parses the BPMN, generates a YAML DSL, and starts a Temporal workflow.
 4. **Dashboard**: Go to the **Dashboard** tab. Select your workflow from the sidebar.
 5. **Progress**:
-   - Add comments to stages.
-   - Click **Send for Review** / **Send for Approval** to advance.
-   - Click **Reject** to trigger an Admin Routing event.
-   - (Admin) Use the **Route Rejection** button to send the workflow back to an earlier stage.
+    - Add comments to stages. (Note: Adding a comment during the **Review** stage will return the department to the **Prep** stage when attempting to advance).
+    - Click **Send for Review** / **Send for Approval** to advance.
+    - Click **Reject** to trigger an Admin Routing event.
+    - (Admin) Use the **Route Rejection** button to send the workflow back to an earlier stage.
 
 ---

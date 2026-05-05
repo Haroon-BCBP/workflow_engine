@@ -328,6 +328,13 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                   dept.stage_status === "done" &&
                   dept.current_stage === "approve";
 
+                let advanceButtonLabel = "→ Send for Approval";
+                if (dept.current_stage === "prep") {
+                  advanceButtonLabel = "→ Send for Review";
+                } else if (dept.current_stage === "review" && dept.has_comment) {
+                  advanceButtonLabel = "→ Return to Prep (Address Comments)";
+                }
+
                 return (
                   <div
                     key={dept.dept_id}
@@ -375,95 +382,106 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                       })}
                     </div>
 
-                    {dept.stage_status === "in_progress" && !isRejected && state.status !== "paused" && (
-                      <div className="dept-actions">
-                        <div className="comment-row">
-                          <input
-                            className="comment-input"
-                            placeholder="Add a comment…"
-                            value={commentText[dept.dept_id] ?? ""}
-                            onChange={(e) =>
-                              setCommentText((prev) => ({
-                                ...prev,
-                                [dept.dept_id]: e.target.value,
-                              }))
-                            }
-                            id={`comment-input-${dept.dept_id}`}
-                          />
-                          <button
-                            className="btn-sm btn-secondary"
-                            onClick={() =>
-                              handleComment(dept.dept_id, dept.current_stage)
-                            }
-                            disabled={
-                              actionLoading === `${dept.dept_id}-comment`
-                            }
-                            id={`btn-comment-${dept.dept_id}`}
-                          >
-                            Comment
-                          </button>
-                        </div>
+                    {dept.stage_status === "in_progress" &&
+                      !isRejected &&
+                      state.status !== "paused" && (
+                        <div className="dept-actions">
+                          <div className="comment-row">
+                            <input
+                              className="comment-input"
+                              placeholder="Add a comment…"
+                              value={commentText[dept.dept_id] ?? ""}
+                              onChange={(e) =>
+                                setCommentText((prev) => ({
+                                  ...prev,
+                                  [dept.dept_id]: e.target.value,
+                                }))
+                              }
+                              id={`comment-input-${dept.dept_id}`}
+                            />
+                            <button
+                              className="btn-sm btn-secondary"
+                              onClick={() =>
+                                handleComment(dept.dept_id, dept.current_stage)
+                              }
+                              disabled={
+                                actionLoading === `${dept.dept_id}-comment`
+                              }
+                              id={`btn-comment-${dept.dept_id}`}
+                            >
+                              Comment
+                            </button>
+                          </div>
 
-                        {dept.comments?.length > 0 && (
-                          <ul className="comment-list">
-                            {dept.comments.map((c, i) => (
-                              <li key={i} className="comment-item">
-                                <span className="comment-user">
-                                  {c.user_id}
-                                </span>
-                                <span className="comment-text">{c.text}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                          {dept.comments?.length > 0 && (
+                            <ul className="comment-list">
+                              {dept.comments.map((c, i) => (
+                                <li key={i} className="comment-item">
+                                  <span className="comment-user">
+                                    {c.user_id}
+                                  </span>
+                                  <span className="comment-text">{c.text}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
 
-                        <div className="transition-buttons">
-                          {dept.current_stage !== "approve" &&
-                            STATUS_NEXT[dept.current_stage] && (
+                          <div className="transition-buttons">
+                            {dept.current_stage !== "approve" &&
+                              STATUS_NEXT[dept.current_stage] && (
+                                <button
+                                  className="btn-sm btn-primary"
+                                  onClick={() =>
+                                    handleTransition(
+                                      dept.dept_id,
+                                      STATUS_NEXT[dept.current_stage],
+                                    )
+                                  }
+                                  disabled={!!actionLoading}
+                                  id={`btn-advance-${dept.dept_id}`}
+                                >
+                                  {advanceButtonLabel}
+                                </button>
+                              )}
+                            {dept.current_stage === "approve" && (
                               <button
-                                className="btn-sm btn-primary"
+                                className="btn-sm btn-success"
                                 onClick={() =>
                                   handleTransition(
                                     dept.dept_id,
-                                    STATUS_NEXT[dept.current_stage],
+                                    dept.current_stage,
                                   )
                                 }
-                                disabled={!!actionLoading}
-                                id={`btn-advance-${dept.dept_id}`}
+                                disabled={
+                                  !!actionLoading ||
+                                  (dept.current_stage === "approve" &&
+                                    !dept.has_comment)
+                                }
+                                id={`btn-approve-${dept.dept_id}`}
+                                title={
+                                  dept.current_stage === "approve" &&
+                                  !dept.has_comment
+                                    ? "Add a comment before approving"
+                                    : ""
+                                }
                               >
-                                {dept.current_stage === "prep"
-                                  ? "→ Send for Review"
-                                  : "→ Send for Approval"}
+                                ✓{" "}
+                                {dept.current_stage === "approve"
+                                  ? "Approve"
+                                  : "Complete"}
                               </button>
                             )}
-                          {dept.current_stage === "approve" && (
                             <button
-                              className="btn-sm btn-success"
-                              onClick={() =>
-                                handleTransition(dept.dept_id, dept.current_stage)
-                              }
-                              disabled={!!actionLoading || (dept.current_stage === "approve" && !dept.has_comment)}
-                              id={`btn-approve-${dept.dept_id}`}
-                              title={
-                                dept.current_stage === "approve" && !dept.has_comment
-                                  ? "Add a comment before approving"
-                                  : ""
-                              }
+                              className="btn-sm btn-danger"
+                              onClick={() => handleReject(dept.dept_id)}
+                              disabled={!!actionLoading}
+                              id={`btn-reject-${dept.dept_id}`}
                             >
-                              ✓ {dept.current_stage === "approve" ? "Approve" : "Complete"}
+                              ✕ Reject
                             </button>
-                          )}
-                          <button
-                            className="btn-sm btn-danger"
-                            onClick={() => handleReject(dept.dept_id)}
-                            disabled={!!actionLoading}
-                            id={`btn-reject-${dept.dept_id}`}
-                          >
-                            ✕ Reject
-                          </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {isRejected && (
                       <div className="rejected-notice">
