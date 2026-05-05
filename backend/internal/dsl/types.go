@@ -30,12 +30,12 @@ const (
 )
 
 type ExecutionPlan struct {
-	Steps []ExecutionStep `yaml:"steps"`
+	Steps []ExecutionStep `yaml:"steps" json:"steps"`
 }
 
 type ExecutionStep struct {
-	Sequential []string `yaml:"sequential,omitempty"`
-	Parallel   []string `yaml:"parallel,omitempty"`
+	Sequential []string `yaml:"sequential,omitempty" json:"sequential,omitempty"`
+	Parallel   []string `yaml:"parallel,omitempty" json:"parallel,omitempty"`
 }
 
 type WorkflowState struct {
@@ -43,6 +43,7 @@ type WorkflowState struct {
 	Name        string                         `json:"name"`
 	CurrentStep int                            `json:"current_step"`
 	Progress    map[string]*DepartmentProgress `json:"progress"` // keyed by dept ID
+	Execution   ExecutionPlan                  `json:"execution"`
 	Status      WorkflowStatus                 `json:"status"`
 	RejectedBy  string                         `json:"rejected_by,omitempty"`
 }

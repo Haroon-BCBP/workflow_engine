@@ -1,181 +1,90 @@
 [
   {
     "$schema": "https://unpkg.com/@camunda/zeebe-element-templates-json-schema/resources/schema.json",
-
-    "name": "Temporal Activity Task",
-    "id": "io.temporal.activity",
+    "name": "Department Stage Task",
+    "id": "workflow-engine.dept-stage-task",
     "version": 1,
-
-    "description": "Execute Temporal activity worker",
-
-    "documentationRef": "https://temporal.io/",
-
-    "keywords": [
-      "temporal",
-      "activity",
-      "worker"
-    ],
-
-    "category": {
-      "id": "temporal",
-      "name": "Temporal"
-    },
-
-    "icon": {
-      "contents": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDov..."
-    },
-
-    "engines": {
-      "camunda": "^8.0.0"
-    },
-
-    "appliesTo": [
-      "bpmn:ServiceTask"
-    ],
-
-    "elementType": {
-      "value": "bpmn:ServiceTask"
-    },
-
+    "description": "A Prep, Review, or Approve stage task for a workflow engine department.",
+    "appliesTo": ["bpmn:UserTask"],
     "groups": [
       {
-        "id": "general",
-        "label": "General"
+        "id": "department",
+        "label": "Department"
       },
       {
-        "id": "timeouts",
-        "label": "Timeouts"
-      },
-      {
-        "id": "io",
-        "label": "Input / Output"
+        "id": "stage",
+        "label": "Stage"
       }
     ],
-
     "properties": [
-
       {
-        "group": "general",
-        "label": "Task Type",
-        "type": "Hidden",
-        "value": "temporal-activity",
+        "group": "department",
+        "label": "Department",
+        "description": "Which department this task belongs to",
+        "type": "Dropdown",
+        "value": "design",
         "binding": {
-          "type": "zeebe:taskDefinition:type"
-        }
-      },
-
-      {
-        "group": "general",
-        "label": "Activity Name",
-        "type": "String",
-
-        "feel": "optional",
-
-        "description": "Temporal activity type",
-
-        "binding": {
-          "type": "zeebe:taskHeader",
-          "key": "activityType"
+          "type": "zeebe:property",
+          "name": "dept_id"
         },
-
+        "choices": [
+          { "name": "Design / Engineering", "value": "design" },
+          { "name": "Planning",             "value": "planning" },
+          { "name": "Construction",         "value": "construction" },
+          { "name": "QA / QC",              "value": "qa" },
+          { "name": "HSE",                  "value": "hse" },
+          { "name": "Procurement",          "value": "procurement" },
+          { "name": "Logistics",            "value": "logistics" },
+          { "name": "Commissioning",        "value": "commissioning" }
+        ],
         "constraints": {
           "notEmpty": true
         }
       },
-
       {
-        "group": "general",
-        "label": "Task Queue",
-        "type": "String",
-
-        "binding": {
-          "type": "zeebe:taskHeader",
-          "key": "taskQueue"
-        }
-      },
-
-      {
-        "group": "general",
-        "label": "Retries",
-        "type": "String",
-
-        "value": "3",
-
-        "binding": {
-          "type": "zeebe:taskDefinition:retries"
-        }
-      },
-
-      {
-        "group": "general",
-        "label": "Retry Policy",
+        "group": "stage",
+        "label": "Stage Type",
+        "description": "The stage within this department",
         "type": "Dropdown",
-
+        "value": "prep",
+        "binding": {
+          "type": "zeebe:property",
+          "name": "stage_type"
+        },
         "choices": [
-          {
-            "name": "None",
-            "value": "none"
-          },
-          {
-            "name": "Linear",
-            "value": "linear"
-          },
-          {
-            "name": "Exponential",
-            "value": "exponential"
-          }
+          { "name": "Prep",    "value": "prep" },
+          { "name": "Review",  "value": "review" },
+          { "name": "Approve", "value": "approve" }
         ],
-
-        "binding": {
-          "type": "zeebe:taskHeader",
-          "key": "retryPolicy"
+        "constraints": {
+          "notEmpty": true
         }
       },
-
       {
-        "group": "timeouts",
-        "label": "Start To Close Timeout",
-        "type": "String",
-
+        "group": "stage",
+        "label": "Assignee Role",
+        "description": "The IAM role responsible for this stage",
+        "type": "Dropdown",
+        "value": "preparer",
         "binding": {
-          "type": "zeebe:taskHeader",
-          "key": "startToCloseTimeout"
-        }
+          "type": "zeebe:property",
+          "name": "role"
+        },
+        "choices": [
+          { "name": "Preparer",  "value": "preparer" },
+          { "name": "Reviewer",  "value": "reviewer" },
+          { "name": "Approver",  "value": "approver" }
+        ]
       },
-
       {
-        "group": "timeouts",
-        "label": "Heartbeat Timeout",
-        "type": "String",
-
+        "group": "stage",
+        "label": "Requires Comment Before Approval",
+        "description": "A comment must be added before this stage can be approved",
+        "type": "Checkbox",
+        "value": true,
         "binding": {
-          "type": "zeebe:taskHeader",
-          "key": "heartbeatTimeout"
-        }
-      },
-
-      {
-        "group": "io",
-        "label": "Input Variables",
-        "type": "Text",
-
-        "feel": "required",
-
-        "binding": {
-          "type": "zeebe:input",
-          "name": "payload"
-        }
-      },
-
-      {
-        "group": "io",
-        "label": "Result Variable",
-        "type": "String",
-
-        "binding": {
-          "type": "zeebe:output",
-          "source": "=result",
-          "target": "activityResult"
+          "type": "zeebe:property",
+          "name": "requires_comment"
         }
       }
     ]

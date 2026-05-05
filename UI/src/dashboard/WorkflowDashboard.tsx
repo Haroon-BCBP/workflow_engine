@@ -30,6 +30,12 @@ interface WorkflowState {
   name: string;
   current_step: number;
   progress: Record<string, DepartmentProgress>;
+  execution: {
+    steps: Array<{
+      sequential?: string[];
+      parallel?: string[];
+    }>;
+  };
   status: string;
   rejected_by?: string;
 }
@@ -188,7 +194,36 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   };
 
   const deptList: DepartmentProgress[] = state
-    ? Object.values(state.progress)
+    ? state.progress
+      ? (() => {
+          // Order departments based on execution steps
+          const ordered: DepartmentProgress[] = [];
+          const seen = new Set<string>();
+
+          if (state.execution && state.execution.steps) {
+            state.execution.steps.forEach((step: any) => {
+              const ids = [
+                ...(step.sequential || []),
+                ...(step.parallel || []),
+              ];
+              ids.forEach((id) => {
+                if (state.progress[id] && !seen.has(id)) {
+                  ordered.push(state.progress[id]);
+                  seen.add(id);
+                }
+              });
+            });
+          }
+
+          // Add any remaining depts not in execution plan (fallback)
+          Object.keys(state.progress).forEach((id) => {
+            if (!seen.has(id)) {
+              ordered.push(state.progress[id]);
+            }
+          });
+          return ordered;
+        })()
+      : []
     : [];
 
   return (

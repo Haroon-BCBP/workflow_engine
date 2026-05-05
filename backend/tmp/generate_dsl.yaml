@@ -1,0 +1,119 @@
+name: Engineering Package Review
+version: "1.0"
+task_queue: workflow-engine-queue
+departments:
+    - id: design
+      label: Design
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: planning
+      label: Planning
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: construction
+      label: Construction
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: qa
+      label: Qa
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: hse
+      label: Hse
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: procurement
+      label: Procurement
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: logistics
+      label: Logistics
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+    - id: commissioning
+      label: Commissioning
+      stages:
+        - type: prep
+          activity: StageStartedActivity
+          role: preparer
+        - type: review
+          activity: StageStartedActivity
+          role: reviewer
+          requires_comment: true
+        - type: approve
+          activity: StageStartedActivity
+          role: approver
+execution:
+    steps:
+        - sequential:
+            - design
+            - planning
+            - construction
+            - qa
+            - hse
+            - procurement
+            - logistics
+            - commissioning

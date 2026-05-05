@@ -178,10 +178,29 @@ func buildTaskLaneMap(proc Process) map[string]string {
 func laneOrder(proc Process) []string {
 	var order []string
 	seen := map[string]bool{}
+
+	taskToDeptID := make(map[string]string)
+	for _, t := range proc.UserTasks {
+		if props := zeebeProps(t); props["dept_id"] != "" {
+			taskToDeptID[t.ID] = props["dept_id"]
+		}
+	}
+
 	if proc.LaneSet != nil {
 		for _, lane := range proc.LaneSet.Lanes {
-			id := normalizeDeptID(lane.Name)
-			if !seen[id] {
+			id := ""
+			for _, ref := range lane.FlowRefs {
+				if dID, ok := taskToDeptID[ref]; ok {
+					id = dID
+					break
+				}
+			}
+
+			if id == "" {
+				id = normalizeDeptID(lane.Name)
+			}
+
+			if id != "" && !seen[id] {
 				order = append(order, id)
 				seen[id] = true
 			}
@@ -205,6 +224,9 @@ func normalizeDeptID(name string) string {
 	s := strings.ToLower(strings.TrimSpace(name))
 	s = strings.ReplaceAll(s, " ", "_")
 	s = strings.ReplaceAll(s, "/", "_")
+	for strings.Contains(s, "__") {
+		s = strings.ReplaceAll(s, "__", "_")
+	}
 	return s
 }
 

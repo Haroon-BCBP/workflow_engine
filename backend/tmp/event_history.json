@@ -1,0 +1,247 @@
+{
+  "eventId": "1",
+  "eventTime": "2026-05-05T05:19:56.058468Z",
+  "eventType": "WorkflowExecutionStarted",
+  "taskId": "3145829",
+  "workflowExecutionStartedEventAttributes": {
+    "workflowType": {
+      "name": "DSLWorkflow"
+    },
+    "taskQueue": {
+      "name": "workflow-engine-queue",
+      "kind": "TASK_QUEUE_KIND_NORMAL"
+    },
+    "input": {
+      "payloads": [
+        {
+          "Name": "Engineering Package Review",
+          "Version": "1.0",
+          "TaskQueue": "workflow-engine-queue",
+          "Departments": [
+            {
+              "ID": "design",
+              "Label": "Design",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "planning",
+              "Label": "Planning",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "construction",
+              "Label": "Construction",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "qa",
+              "Label": "Qa",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "hse",
+              "Label": "Hse",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "procurement",
+              "Label": "Procurement",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "logistics",
+              "Label": "Logistics",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            },
+            {
+              "ID": "commissioning",
+              "Label": "Commissioning",
+              "Stages": [
+                {
+                  "Type": "prep",
+                  "Activity": "StageStartedActivity",
+                  "Role": "preparer",
+                  "RequiresComment": false
+                },
+                {
+                  "Type": "review",
+                  "Activity": "StageStartedActivity",
+                  "Role": "reviewer",
+                  "RequiresComment": true
+                },
+                {
+                  "Type": "approve",
+                  "Activity": "StageStartedActivity",
+                  "Role": "approver",
+                  "RequiresComment": false
+                }
+              ]
+            }
+          ],
+          "Execution": {
+            "Steps": [
+              {
+                "Sequential": [
+                  "design",
+                  "planning",
+                  "construction",
+                  "qa",
+                  "hse",
+                  "procurement",
+                  "logistics",
+                  "commissioning"
+                ],
+                "Parallel": null
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "workflowExecutionTimeout": "0s",
+    "workflowRunTimeout": "0s",
+    "workflowTaskTimeout": "10s",
+    "originalExecutionRunId": "019df694-209a-7720-bd20-bc6eeabf78c9",
+    "identity": "98711@Admins-MacBook-Pro.local@",
+    "firstExecutionRunId": "019df694-209a-7720-bd20-bc6eeabf78c9",
+    "attempt": 1,
+    "firstWorkflowTaskBackoff": "0s",
+    "header": {},
+    "workflowId": "wf-ab80d20c-a5ed-4e2a-b321-f3a7c245dd11"
+  },
+  "links": [],
+  "billableActions": 1
+}

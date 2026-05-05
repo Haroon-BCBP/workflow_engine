@@ -16,6 +16,7 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 		Name:        def.Name,
 		CurrentStep: 0,
 		Progress:    make(map[string]*DepartmentProgress),
+		Execution:   def.Execution,
 		Status:      WorkflowRunning,
 	}
 	for _, d := range def.Departments {
@@ -33,42 +34,45 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 		return "", fmt.Errorf("failed to set query handler: %w", err)
 	}
 
-	// shared across all department goroutines
 	transitionChan := workflow.GetSignalChannel(ctx, TransitionChannel)
 	commentChan := workflow.GetSignalChannel(ctx, CommentChannel)
 	adminChan := workflow.GetSignalChannel(ctx, AdminRoutingChannel)
 
-	for stepIdx, step := range def.Execution.Steps {
-		state.CurrentStep = stepIdx
+OuterLoop:
+	for {
+		for stepIdx := 0; stepIdx < len(def.Execution.Steps); stepIdx++ {
+			step := def.Execution.Steps[stepIdx]
+			state.CurrentStep = stepIdx
 
-		if len(step.Sequential) > 0 {
-			for _, deptID := range step.Sequential {
-				dept := findDept(def, deptID)
-				if dept == nil {
-					return "", fmt.Errorf("dept %q not found in definition", deptID)
+			if len(step.Sequential) > 0 {
+				for _, deptID := range step.Sequential {
+					dept := findDept(def, deptID)
+					if dept == nil {
+						return "", fmt.Errorf("dept %q not found in definition", deptID)
+					}
+					rejected, err := processDepartment(ctx, *dept, def, state, transitionChan, commentChan, adminChan)
+					if err != nil {
+						return "", err
+					}
+					if rejected {
+						logger.Info("Workflow paused for admin routing", "dept", deptID)
+						routed, err := waitForAdminRouting(ctx, def, state, transitionChan, commentChan, adminChan)
+						if err != nil || !routed {
+							state.Status = WorkflowRejected
+							return "Workflow terminated by admin", nil
+						}
+						continue OuterLoop
+					}
 				}
-				rejected, err := processDepartment(ctx, *dept, def, state, transitionChan, commentChan, adminChan)
-				if err != nil {
+			}
+
+			if len(step.Parallel) > 0 {
+				if err := runParallel(ctx, step.Parallel, def, state, transitionChan, commentChan, adminChan); err != nil {
 					return "", err
 				}
-				if rejected {
-					logger.Info("Workflow paused for admin routing", "dept", deptID)
-					routed, err := waitForAdminRouting(ctx, def, state, transitionChan, commentChan, adminChan)
-					if err != nil || !routed {
-						state.Status = WorkflowRejected
-						return "Workflow terminated by admin", nil
-					}
-					stepIdx = -1
-					break
-				}
 			}
 		}
-
-		if len(step.Parallel) > 0 {
-			if err := runParallel(ctx, step.Parallel, def, state, transitionChan, commentChan, adminChan); err != nil {
-				return "", err
-			}
-		}
+		break // Finished all steps
 	}
 
 	state.Status = WorkflowApproved
@@ -117,17 +121,19 @@ func processDepartment(
 				}
 
 				if sig.ToStage == StageApprove {
-					// Approve only valid at the approve stage
-					if stage.Type != StageApprove {
-						logger.Warn("Cannot approve at this stage", "stage", stage.Type)
-						return
+					if stage.Type == StageReview {
+						progress.StageStatus = StageStatusDone
+						done = true
+					} else if stage.Type == StageApprove {
+						if stage.RequiresComment && !progress.HasComment {
+							logger.Warn("Cannot approve without a comment", "dept", dept.ID)
+							return
+						}
+						progress.StageStatus = StageStatusDone
+						done = true
+					} else {
+						logger.Warn("Cannot approve/advance to approve from this stage", "stage", stage.Type)
 					}
-					if stage.RequiresComment && !progress.HasComment {
-						logger.Warn("Cannot approve without a comment", "dept", dept.ID)
-						return
-					}
-					progress.StageStatus = StageStatusDone
-					done = true
 				} else if sig.ToStage == StageReview {
 					if stage.Type != StagePrep {
 						logger.Warn("Unexpected review transition", "stage", stage.Type)
@@ -171,10 +177,13 @@ func processDepartment(
 				break
 			}
 		}
+
 	}
 
-	progress.StageStatus = StageStatusDone
-	return false, nil
+	if progress.CurrentStage == StageApprove && progress.StageStatus == StageStatusDone {
+		return false, nil
+	}
+	return false, nil // Standard completion
 }
 
 // waitForAdminRouting blocks until admin sends a routing or terminate signal.

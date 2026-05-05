@@ -149,8 +149,16 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
         </button>
         {statusMsg && <span className="submit-status">{statusMsg}</span>}
       </div>
-      <div ref={containerRef} className="canvas-container" />
-      <div ref={propertiesRef} className="properties-container" />
+
+      <div className="modeler-hint">
+        💡 <strong>Using templates:</strong> Add a <em>User Task</em> to the canvas → select it → click
+        {" "}<strong>"Select template"</strong> in the right panel to apply the <em>Department Stage Task</em> template.
+      </div>
+
+      <div className="modeler-body">
+        <div ref={containerRef} className="canvas-container" />
+        <div ref={propertiesRef} className="properties-container" />
+      </div>
     </div>
   );
 };

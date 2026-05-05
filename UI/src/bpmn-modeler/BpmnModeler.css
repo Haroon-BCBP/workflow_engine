@@ -3,14 +3,46 @@
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
+    background: var(--bg-base, #f4f6fb);
+  }
+  
+  .button-bar {
+    padding: 12px 24px;
+    background: var(--bg-surface, #ffffff);
+    border-bottom: 1px solid var(--border, #dde2f0);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  
+  .modeler-hint {
+    padding: 10px 24px;
+    background: #eef2ff;
+    border-bottom: 1px solid #c7d2fe;
+    font-size: 13px;
+    color: #3730a3;
+    flex-shrink: 0;
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .modeler-body {
+    flex: 1;
+    display: flex;
   flex-direction: row;
+  overflow: hidden;
 }
 
 .canvas-container {
   flex: 1;
   height: 100%;
-  border: none;
-  border-right: 1px solid var(--border, #dde2f0);
+  background: #ffffff;
+  position: relative;
 }
 
 .properties-container {
@@ -19,27 +51,20 @@
   border-left: 1px solid var(--border, #dde2f0);
   overflow-y: auto;
   background: var(--bg-surface, #ffffff);
-}
-
-.button-bar {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  z-index: 10;
-  display: flex;
-  gap: 10px;
-  align-items: center;
+  flex-shrink: 0;
 }
 
 .submit-status {
-  background: var(--bg-card, #1a1f2e);
-  border: 1px solid var(--border, #2a3050);
+  background: var(--bg-input, #f0f3fa);
+    border: 1px solid var(--border, #dde2f0);
   border-radius: 8px;
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 12px;
-  color: var(--success, #22c55e);
-  max-width: 320px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--success, #16a34a);
+    font-weight: 500;
+  }
+  
+  /* Override bpmn-js defaults if needed */
+  .bjs-container {
+    background: transparent !important;
 }
