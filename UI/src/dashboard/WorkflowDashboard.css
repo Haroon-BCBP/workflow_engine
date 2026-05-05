@@ -26,6 +26,7 @@
 
 .workflow-list { flex: 1; overflow-y: auto; padding: 8px; list-style: none; }
 .workflow-item {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -34,6 +35,9 @@
   cursor: pointer;
   transition: all 0.15s;
   border: 1px solid transparent;
+  background: none;
+  text-align: left;
+  font-family: inherit;
 }
 .workflow-item:hover { background: var(--bg-card); }
 .workflow-item.selected { background: var(--bg-card); border-color: var(--accent); }

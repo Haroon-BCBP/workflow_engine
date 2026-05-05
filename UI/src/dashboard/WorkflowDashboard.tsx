@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { api } from "../api/client";
 import "./WorkflowDashboard.css";
 
@@ -193,38 +193,37 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
     }
   };
 
-  const deptList: DepartmentProgress[] = state
-    ? state.progress
-      ? (() => {
-          const ordered: DepartmentProgress[] = [];
-          const seen = new Set<string>();
+  const deptList = useMemo(() => {
+    if (!state?.progress) return [];
 
-          if (state.execution && state.execution.steps) {
-            state.execution.steps.forEach((step: any) => {
-              // Handle both capitalized and lowercase from backend
-              const seq = step.sequential || step.Sequential || [];
-              const par = step.parallel || step.Parallel || [];
-              const ids = [...seq, ...par];
+    const ordered: DepartmentProgress[] = [];
+    const seen = new Set<string>();
 
-              ids.forEach((id) => {
-                const prog = state.progress[id];
-                if (prog && !seen.has(id)) {
-                  ordered.push(prog);
-                  seen.add(id);
-                }
-              });
-            });
+    if (state?.execution?.steps) {
+      state.execution.steps.forEach((step: any) => {
+        const seq = step.sequential || step.Sequential || [];
+        const par = step.parallel || step.Parallel || [];
+        const ids = [...seq, ...par];
+
+        ids.forEach((id) => {
+          const prog = state.progress[id];
+          if (prog && !seen.has(id)) {
+            ordered.push(prog);
+            seen.add(id);
           }
+        });
+      });
+    }
 
-          Object.keys(state.progress).forEach((id) => {
-            if (!seen.has(id)) {
-              ordered.push(state.progress[id]);
-            }
-          });
-          return ordered;
-        })()
-      : []
-    : [];
+    // 2. Add any remaining departments not in execution plan (fallback)
+    Object.keys(state.progress).forEach((id) => {
+      if (!seen.has(id)) {
+        ordered.push(state.progress[id]);
+      }
+    });
+
+    return ordered;
+  }, [state]);
 
   return (
     <div className="dashboard">
@@ -251,16 +250,18 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
         )}
         <ul className="workflow-list">
           {runs.map((run) => (
-            <li
-              key={run.id}
-              className={`workflow-item ${selectedId === run.id ? "selected" : ""}`}
-              onClick={() => setSelectedId(run.id)}
-              id={`workflow-item-${run.id}`}
-            >
-              <span className="wf-name">{run.name}</span>
-              <span className="wf-date">
-                {new Date(run.created_at).toLocaleDateString()}
-              </span>
+            <li key={run.id}>
+              <button
+                type="button"
+                className={`workflow-item ${selectedId === run.id ? "selected" : ""}`}
+                onClick={() => setSelectedId(run.id)}
+                id={`workflow-item-${run.id}`}
+              >
+                <span className="wf-name">{run.name}</span>
+                <span className="wf-date">
+                  {new Date(run.created_at).toLocaleDateString()}
+                </span>
+              </button>
             </li>
           ))}
         </ul>
@@ -438,9 +439,9 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                               disabled={!!actionLoading || !dept.has_comment}
                               id={`btn-approve-${dept.dept_id}`}
                               title={
-                                !dept.has_comment
-                                  ? "Add a comment before approving"
-                                  : ""
+                                dept.has_comment
+                                  ? ""
+                                  : "Add a comment before approving"
                               }
                             >
                               ✓ Approve
@@ -478,17 +479,19 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
       </div>
 
       {showAdmin && state && (
-        <div className="modal-backdrop" onClick={() => setShowAdmin(false)}>
-          <div
-            className="modal"
-            onClick={(e) => e.stopPropagation()}
-            id="admin-routing-modal"
-          >
+        <div className="modal-overlay">
+          <button
+            type="button"
+            className="modal-backdrop"
+            onClick={() => setShowAdmin(false)}
+            aria-label="Close modal"
+          />
+          <div className="modal" id="admin-routing-modal">
             <h3>Admin: Route After Rejection</h3>
             <p>
               Workflow rejected by: <strong>{state.rejected_by}</strong>
             </p>
-            <label>Go to Department</label>
+            <label htmlFor="admin-goto-dept">Go to Department</label>
             <select
               value={adminGotoDept}
               onChange={(e) => setAdminGotoDept(e.target.value)}
@@ -500,7 +503,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                 </option>
               ))}
             </select>
-            <label>Go to Stage</label>
+            <label htmlFor="admin-goto-stage">Go to Stage</label>
             <select
               value={adminGotoStage}
               onChange={(e) => setAdminGotoStage(e.target.value)}
@@ -536,12 +539,14 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
       )}
 
       {showYaml && yaml && (
-        <div className="modal-backdrop" onClick={() => setShowYaml(false)}>
-          <div
-            className="modal modal-wide"
-            onClick={(e) => e.stopPropagation()}
-            id="yaml-modal"
-          >
+        <div className="modal-overlay">
+          <button
+            type="button"
+            className="modal-backdrop"
+            onClick={() => setShowYaml(false)}
+            aria-label="Close YAML view"
+          />
+          <div className="modal modal-wide" id="yaml-modal">
             <h3>Generated DSL YAML</h3>
             <pre className="yaml-block">{yaml}</pre>
             <button className="btn-ghost" onClick={() => setShowYaml(false)}>

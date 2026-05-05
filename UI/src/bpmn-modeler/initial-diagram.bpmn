@@ -17,10 +17,30 @@
         <bpmn:flowNodeRef>Task_design_review</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_design_approve</bpmn:flowNodeRef>
       </bpmn:lane>
+      <bpmn:lane id="Lane_contracts" name="Contract Management">
+        <bpmn:flowNodeRef>Task_contracts_prep</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_contracts_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_contracts_approve</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_procurement" name="Procurement">
+        <bpmn:flowNodeRef>Task_procurement_prep</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_procurement_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_procurement_approve</bpmn:flowNodeRef>
+      </bpmn:lane>
       <bpmn:lane id="Lane_planning" name="Planning">
         <bpmn:flowNodeRef>Task_planning_prep</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_planning_review</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_planning_approve</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_logistics" name="Logistics">
+        <bpmn:flowNodeRef>Task_logistics_prep</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_logistics_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_logistics_approve</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_hse" name="HSE">
+        <bpmn:flowNodeRef>Task_hse_prep</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_hse_review</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_hse_approve</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_construction" name="Construction">
         <bpmn:flowNodeRef>Task_construction_prep</bpmn:flowNodeRef>
@@ -31,21 +51,6 @@
         <bpmn:flowNodeRef>Task_qa_prep</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_qa_review</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Task_qa_approve</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_hse" name="HSE">
-        <bpmn:flowNodeRef>Task_hse_prep</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_hse_review</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_hse_approve</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_procurement" name="Procurement">
-        <bpmn:flowNodeRef>Task_procurement_prep</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_procurement_review</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_procurement_approve</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_logistics" name="Logistics">
-        <bpmn:flowNodeRef>Task_logistics_prep</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_logistics_review</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_logistics_approve</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_commissioning" name="Commissioning">
         <bpmn:flowNodeRef>Task_commissioning_prep</bpmn:flowNodeRef>
@@ -82,6 +87,60 @@
         </zeebe:properties>
       </bpmn:extensionElements>
     </bpmn:userTask>
+    <bpmn:userTask id="Task_contracts_prep" name="Prep">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="contracts"/>
+          <zeebe:property name="stage_type" value="prep"/>
+          <zeebe:property name="role"       value="preparer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_contracts_review" name="Review">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="contracts"/>
+          <zeebe:property name="stage_type" value="review"/>
+          <zeebe:property name="role"       value="reviewer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_contracts_approve" name="Approve">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="contracts"/>
+          <zeebe:property name="stage_type" value="approve"/>
+          <zeebe:property name="role"       value="approver"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_procurement_prep" name="Prep">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="procurement"/>
+          <zeebe:property name="stage_type" value="prep"/>
+          <zeebe:property name="role"       value="preparer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_procurement_review" name="Review">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="procurement"/>
+          <zeebe:property name="stage_type" value="review"/>
+          <zeebe:property name="role"       value="reviewer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_procurement_approve" name="Approve">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="procurement"/>
+          <zeebe:property name="stage_type" value="approve"/>
+          <zeebe:property name="role"       value="approver"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
     <bpmn:userTask id="Task_planning_prep" name="Prep">
       <bpmn:extensionElements>
         <zeebe:properties>
@@ -104,6 +163,60 @@
       <bpmn:extensionElements>
         <zeebe:properties>
           <zeebe:property name="dept_id"    value="planning"/>
+          <zeebe:property name="stage_type" value="approve"/>
+          <zeebe:property name="role"       value="approver"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_logistics_prep" name="Prep">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="logistics"/>
+          <zeebe:property name="stage_type" value="prep"/>
+          <zeebe:property name="role"       value="preparer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_logistics_review" name="Review">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="logistics"/>
+          <zeebe:property name="stage_type" value="review"/>
+          <zeebe:property name="role"       value="reviewer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_logistics_approve" name="Approve">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="logistics"/>
+          <zeebe:property name="stage_type" value="approve"/>
+          <zeebe:property name="role"       value="approver"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_hse_prep" name="Prep">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="hse"/>
+          <zeebe:property name="stage_type" value="prep"/>
+          <zeebe:property name="role"       value="preparer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_hse_review" name="Review">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="hse"/>
+          <zeebe:property name="stage_type" value="review"/>
+          <zeebe:property name="role"       value="reviewer"/>
+        </zeebe:properties>
+      </bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_hse_approve" name="Approve">
+      <bpmn:extensionElements>
+        <zeebe:properties>
+          <zeebe:property name="dept_id"    value="hse"/>
           <zeebe:property name="stage_type" value="approve"/>
           <zeebe:property name="role"       value="approver"/>
         </zeebe:properties>
@@ -163,87 +276,6 @@
         </zeebe:properties>
       </bpmn:extensionElements>
     </bpmn:userTask>
-    <bpmn:userTask id="Task_hse_prep" name="Prep">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="hse"/>
-          <zeebe:property name="stage_type" value="prep"/>
-          <zeebe:property name="role"       value="preparer"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_hse_review" name="Review">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="hse"/>
-          <zeebe:property name="stage_type" value="review"/>
-          <zeebe:property name="role"       value="reviewer"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_hse_approve" name="Approve">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="hse"/>
-          <zeebe:property name="stage_type" value="approve"/>
-          <zeebe:property name="role"       value="approver"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_procurement_prep" name="Prep">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="procurement"/>
-          <zeebe:property name="stage_type" value="prep"/>
-          <zeebe:property name="role"       value="preparer"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_procurement_review" name="Review">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="procurement"/>
-          <zeebe:property name="stage_type" value="review"/>
-          <zeebe:property name="role"       value="reviewer"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_procurement_approve" name="Approve">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="procurement"/>
-          <zeebe:property name="stage_type" value="approve"/>
-          <zeebe:property name="role"       value="approver"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_logistics_prep" name="Prep">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="logistics"/>
-          <zeebe:property name="stage_type" value="prep"/>
-          <zeebe:property name="role"       value="preparer"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_logistics_review" name="Review">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="logistics"/>
-          <zeebe:property name="stage_type" value="review"/>
-          <zeebe:property name="role"       value="reviewer"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
-    <bpmn:userTask id="Task_logistics_approve" name="Approve">
-      <bpmn:extensionElements>
-        <zeebe:properties>
-          <zeebe:property name="dept_id"    value="logistics"/>
-          <zeebe:property name="stage_type" value="approve"/>
-          <zeebe:property name="role"       value="approver"/>
-        </zeebe:properties>
-      </bpmn:extensionElements>
-    </bpmn:userTask>
     <bpmn:userTask id="Task_commissioning_prep" name="Prep">
       <bpmn:extensionElements>
         <zeebe:properties>
@@ -276,27 +308,30 @@
     <bpmn:sequenceFlow id="Flow_start_prep" sourceRef="StartEvent_1" targetRef="Task_design_prep"/>
     <bpmn:sequenceFlow id="Flow_design_pr" sourceRef="Task_design_prep"    targetRef="Task_design_review"/>
     <bpmn:sequenceFlow id="Flow_design_ra" sourceRef="Task_design_review"  targetRef="Task_design_approve"/>
+    <bpmn:sequenceFlow id="Flow_contracts_pr" sourceRef="Task_contracts_prep"    targetRef="Task_contracts_review"/>
+    <bpmn:sequenceFlow id="Flow_contracts_ra" sourceRef="Task_contracts_review"  targetRef="Task_contracts_approve"/>
+    <bpmn:sequenceFlow id="Flow_procurement_pr" sourceRef="Task_procurement_prep"    targetRef="Task_procurement_review"/>
+    <bpmn:sequenceFlow id="Flow_procurement_ra" sourceRef="Task_procurement_review"  targetRef="Task_procurement_approve"/>
     <bpmn:sequenceFlow id="Flow_planning_pr" sourceRef="Task_planning_prep"    targetRef="Task_planning_review"/>
     <bpmn:sequenceFlow id="Flow_planning_ra" sourceRef="Task_planning_review"  targetRef="Task_planning_approve"/>
+    <bpmn:sequenceFlow id="Flow_logistics_pr" sourceRef="Task_logistics_prep"    targetRef="Task_logistics_review"/>
+    <bpmn:sequenceFlow id="Flow_logistics_ra" sourceRef="Task_logistics_review"  targetRef="Task_logistics_approve"/>
+    <bpmn:sequenceFlow id="Flow_hse_pr" sourceRef="Task_hse_prep"    targetRef="Task_hse_review"/>
+    <bpmn:sequenceFlow id="Flow_hse_ra" sourceRef="Task_hse_review"  targetRef="Task_hse_approve"/>
     <bpmn:sequenceFlow id="Flow_construction_pr" sourceRef="Task_construction_prep"    targetRef="Task_construction_review"/>
     <bpmn:sequenceFlow id="Flow_construction_ra" sourceRef="Task_construction_review"  targetRef="Task_construction_approve"/>
     <bpmn:sequenceFlow id="Flow_qa_pr" sourceRef="Task_qa_prep"    targetRef="Task_qa_review"/>
     <bpmn:sequenceFlow id="Flow_qa_ra" sourceRef="Task_qa_review"  targetRef="Task_qa_approve"/>
-    <bpmn:sequenceFlow id="Flow_hse_pr" sourceRef="Task_hse_prep"    targetRef="Task_hse_review"/>
-    <bpmn:sequenceFlow id="Flow_hse_ra" sourceRef="Task_hse_review"  targetRef="Task_hse_approve"/>
-    <bpmn:sequenceFlow id="Flow_procurement_pr" sourceRef="Task_procurement_prep"    targetRef="Task_procurement_review"/>
-    <bpmn:sequenceFlow id="Flow_procurement_ra" sourceRef="Task_procurement_review"  targetRef="Task_procurement_approve"/>
-    <bpmn:sequenceFlow id="Flow_logistics_pr" sourceRef="Task_logistics_prep"    targetRef="Task_logistics_review"/>
-    <bpmn:sequenceFlow id="Flow_logistics_ra" sourceRef="Task_logistics_review"  targetRef="Task_logistics_approve"/>
     <bpmn:sequenceFlow id="Flow_commissioning_pr" sourceRef="Task_commissioning_prep"    targetRef="Task_commissioning_review"/>
     <bpmn:sequenceFlow id="Flow_commissioning_ra" sourceRef="Task_commissioning_review"  targetRef="Task_commissioning_approve"/>
-    <bpmn:sequenceFlow id="Flow_design_planning" sourceRef="Task_design_approve" targetRef="Task_planning_prep"/>
-    <bpmn:sequenceFlow id="Flow_planning_construction" sourceRef="Task_planning_approve" targetRef="Task_construction_prep"/>
+    <bpmn:sequenceFlow id="Flow_design_contracts" sourceRef="Task_design_approve" targetRef="Task_contracts_prep"/>
+    <bpmn:sequenceFlow id="Flow_contracts_procurement" sourceRef="Task_contracts_approve" targetRef="Task_procurement_prep"/>
+    <bpmn:sequenceFlow id="Flow_procurement_planning" sourceRef="Task_procurement_approve" targetRef="Task_planning_prep"/>
+    <bpmn:sequenceFlow id="Flow_planning_logistics" sourceRef="Task_planning_approve" targetRef="Task_logistics_prep"/>
+    <bpmn:sequenceFlow id="Flow_logistics_hse" sourceRef="Task_logistics_approve" targetRef="Task_hse_prep"/>
+    <bpmn:sequenceFlow id="Flow_hse_construction" sourceRef="Task_hse_approve" targetRef="Task_construction_prep"/>
     <bpmn:sequenceFlow id="Flow_construction_qa" sourceRef="Task_construction_approve" targetRef="Task_qa_prep"/>
-    <bpmn:sequenceFlow id="Flow_qa_hse" sourceRef="Task_qa_approve" targetRef="Task_hse_prep"/>
-    <bpmn:sequenceFlow id="Flow_hse_procurement" sourceRef="Task_hse_approve" targetRef="Task_procurement_prep"/>
-    <bpmn:sequenceFlow id="Flow_procurement_logistics" sourceRef="Task_procurement_approve" targetRef="Task_logistics_prep"/>
-    <bpmn:sequenceFlow id="Flow_logistics_commissioning" sourceRef="Task_logistics_approve" targetRef="Task_commissioning_prep"/>
+    <bpmn:sequenceFlow id="Flow_qa_commissioning" sourceRef="Task_qa_approve" targetRef="Task_commissioning_prep"/>
     <bpmn:sequenceFlow id="Flow_last_end" sourceRef="Task_commissioning_approve" targetRef="EndEvent_1"/>
 
   </bpmn:process>
@@ -305,26 +340,29 @@
       <bpmndi:BPMNShape id="Lane_design_di" bpmnElement="Lane_design" isHorizontal="true">
         <dc:Bounds x="30" y="80" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_planning_di" bpmnElement="Lane_planning" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_contracts_di" bpmnElement="Lane_contracts" isHorizontal="true">
         <dc:Bounds x="30" y="240" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_construction_di" bpmnElement="Lane_construction" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_procurement_di" bpmnElement="Lane_procurement" isHorizontal="true">
         <dc:Bounds x="30" y="400" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_qa_di" bpmnElement="Lane_qa" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_planning_di" bpmnElement="Lane_planning" isHorizontal="true">
         <dc:Bounds x="30" y="560" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_hse_di" bpmnElement="Lane_hse" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_logistics_di" bpmnElement="Lane_logistics" isHorizontal="true">
         <dc:Bounds x="30" y="720" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_procurement_di" bpmnElement="Lane_procurement" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_hse_di" bpmnElement="Lane_hse" isHorizontal="true">
         <dc:Bounds x="30" y="880" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_logistics_di" bpmnElement="Lane_logistics" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_construction_di" bpmnElement="Lane_construction" isHorizontal="true">
         <dc:Bounds x="30" y="1040" width="1100" height="160"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Lane_commissioning_di" bpmnElement="Lane_commissioning" isHorizontal="true">
+      <bpmndi:BPMNShape id="Lane_qa_di" bpmnElement="Lane_qa" isHorizontal="true">
         <dc:Bounds x="30" y="1200" width="1100" height="160"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_commissioning_di" bpmnElement="Lane_commissioning" isHorizontal="true">
+        <dc:Bounds x="30" y="1360" width="1100" height="160"/>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
         <dc:Bounds x="102" y="142" width="36" height="36"/>
@@ -338,71 +376,80 @@
       <bpmndi:BPMNShape id="Task_design_approve_di" bpmnElement="Task_design_approve">
         <dc:Bounds x="620" y="125" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_planning_prep_di" bpmnElement="Task_planning_prep">
+      <bpmndi:BPMNShape id="Task_contracts_prep_di" bpmnElement="Task_contracts_prep">
         <dc:Bounds x="220" y="285" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_planning_review_di" bpmnElement="Task_planning_review">
+      <bpmndi:BPMNShape id="Task_contracts_review_di" bpmnElement="Task_contracts_review">
         <dc:Bounds x="420" y="285" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_planning_approve_di" bpmnElement="Task_planning_approve">
+      <bpmndi:BPMNShape id="Task_contracts_approve_di" bpmnElement="Task_contracts_approve">
         <dc:Bounds x="620" y="285" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_construction_prep_di" bpmnElement="Task_construction_prep">
+      <bpmndi:BPMNShape id="Task_procurement_prep_di" bpmnElement="Task_procurement_prep">
         <dc:Bounds x="220" y="445" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_construction_review_di" bpmnElement="Task_construction_review">
+      <bpmndi:BPMNShape id="Task_procurement_review_di" bpmnElement="Task_procurement_review">
         <dc:Bounds x="420" y="445" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_construction_approve_di" bpmnElement="Task_construction_approve">
+      <bpmndi:BPMNShape id="Task_procurement_approve_di" bpmnElement="Task_procurement_approve">
         <dc:Bounds x="620" y="445" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_qa_prep_di" bpmnElement="Task_qa_prep">
+      <bpmndi:BPMNShape id="Task_planning_prep_di" bpmnElement="Task_planning_prep">
         <dc:Bounds x="220" y="605" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_qa_review_di" bpmnElement="Task_qa_review">
+      <bpmndi:BPMNShape id="Task_planning_review_di" bpmnElement="Task_planning_review">
         <dc:Bounds x="420" y="605" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_qa_approve_di" bpmnElement="Task_qa_approve">
+      <bpmndi:BPMNShape id="Task_planning_approve_di" bpmnElement="Task_planning_approve">
         <dc:Bounds x="620" y="605" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_hse_prep_di" bpmnElement="Task_hse_prep">
+      <bpmndi:BPMNShape id="Task_logistics_prep_di" bpmnElement="Task_logistics_prep">
         <dc:Bounds x="220" y="765" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_hse_review_di" bpmnElement="Task_hse_review">
+      <bpmndi:BPMNShape id="Task_logistics_review_di" bpmnElement="Task_logistics_review">
         <dc:Bounds x="420" y="765" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_hse_approve_di" bpmnElement="Task_hse_approve">
+      <bpmndi:BPMNShape id="Task_logistics_approve_di" bpmnElement="Task_logistics_approve">
         <dc:Bounds x="620" y="765" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_procurement_prep_di" bpmnElement="Task_procurement_prep">
+      <bpmndi:BPMNShape id="Task_hse_prep_di" bpmnElement="Task_hse_prep">
         <dc:Bounds x="220" y="925" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_procurement_review_di" bpmnElement="Task_procurement_review">
+      <bpmndi:BPMNShape id="Task_hse_review_di" bpmnElement="Task_hse_review">
         <dc:Bounds x="420" y="925" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_procurement_approve_di" bpmnElement="Task_procurement_approve">
+      <bpmndi:BPMNShape id="Task_hse_approve_di" bpmnElement="Task_hse_approve">
         <dc:Bounds x="620" y="925" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_logistics_prep_di" bpmnElement="Task_logistics_prep">
+      <bpmndi:BPMNShape id="Task_construction_prep_di" bpmnElement="Task_construction_prep">
         <dc:Bounds x="220" y="1085" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_logistics_review_di" bpmnElement="Task_logistics_review">
+      <bpmndi:BPMNShape id="Task_construction_review_di" bpmnElement="Task_construction_review">
         <dc:Bounds x="420" y="1085" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_logistics_approve_di" bpmnElement="Task_logistics_approve">
+      <bpmndi:BPMNShape id="Task_construction_approve_di" bpmnElement="Task_construction_approve">
         <dc:Bounds x="620" y="1085" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_commissioning_prep_di" bpmnElement="Task_commissioning_prep">
+      <bpmndi:BPMNShape id="Task_qa_prep_di" bpmnElement="Task_qa_prep">
         <dc:Bounds x="220" y="1245" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_commissioning_review_di" bpmnElement="Task_commissioning_review">
+      <bpmndi:BPMNShape id="Task_qa_review_di" bpmnElement="Task_qa_review">
         <dc:Bounds x="420" y="1245" width="140" height="70"/>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Task_commissioning_approve_di" bpmnElement="Task_commissioning_approve">
+      <bpmndi:BPMNShape id="Task_qa_approve_di" bpmnElement="Task_qa_approve">
         <dc:Bounds x="620" y="1245" width="140" height="70"/>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_commissioning_prep_di" bpmnElement="Task_commissioning_prep">
+        <dc:Bounds x="220" y="1405" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_commissioning_review_di" bpmnElement="Task_commissioning_review">
+        <dc:Bounds x="420" y="1405" width="140" height="70"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_commissioning_approve_di" bpmnElement="Task_commissioning_approve">
+        <dc:Bounds x="620" y="1405" width="140" height="70"/>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
-        <dc:Bounds x="820" y="1262" width="36" height="36"/>
+        <dc:Bounds x="820" y="1422" width="36" height="36"/>
       </bpmndi:BPMNShape>
 
       <bpmndi:BPMNEdge id="Flow_start_prep_di" bpmnElement="Flow_start_prep">
@@ -415,49 +462,55 @@
       <bpmndi:BPMNEdge id="Flow_design_ra_di" bpmnElement="Flow_design_ra">
         <di:waypoint x="560" y="160"/><di:waypoint x="620" y="160"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_planning_pr_di" bpmnElement="Flow_planning_pr">
+      <bpmndi:BPMNEdge id="Flow_contracts_pr_di" bpmnElement="Flow_contracts_pr">
         <di:waypoint x="360" y="320"/><di:waypoint x="420" y="320"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_planning_ra_di" bpmnElement="Flow_planning_ra">
+      <bpmndi:BPMNEdge id="Flow_contracts_ra_di" bpmnElement="Flow_contracts_ra">
         <di:waypoint x="560" y="320"/><di:waypoint x="620" y="320"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_construction_pr_di" bpmnElement="Flow_construction_pr">
+      <bpmndi:BPMNEdge id="Flow_procurement_pr_di" bpmnElement="Flow_procurement_pr">
         <di:waypoint x="360" y="480"/><di:waypoint x="420" y="480"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_construction_ra_di" bpmnElement="Flow_construction_ra">
+      <bpmndi:BPMNEdge id="Flow_procurement_ra_di" bpmnElement="Flow_procurement_ra">
         <di:waypoint x="560" y="480"/><di:waypoint x="620" y="480"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_qa_pr_di" bpmnElement="Flow_qa_pr">
+      <bpmndi:BPMNEdge id="Flow_planning_pr_di" bpmnElement="Flow_planning_pr">
         <di:waypoint x="360" y="640"/><di:waypoint x="420" y="640"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_qa_ra_di" bpmnElement="Flow_qa_ra">
+      <bpmndi:BPMNEdge id="Flow_planning_ra_di" bpmnElement="Flow_planning_ra">
         <di:waypoint x="560" y="640"/><di:waypoint x="620" y="640"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_hse_pr_di" bpmnElement="Flow_hse_pr">
+      <bpmndi:BPMNEdge id="Flow_logistics_pr_di" bpmnElement="Flow_logistics_pr">
         <di:waypoint x="360" y="800"/><di:waypoint x="420" y="800"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_hse_ra_di" bpmnElement="Flow_hse_ra">
+      <bpmndi:BPMNEdge id="Flow_logistics_ra_di" bpmnElement="Flow_logistics_ra">
         <di:waypoint x="560" y="800"/><di:waypoint x="620" y="800"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_procurement_pr_di" bpmnElement="Flow_procurement_pr">
+      <bpmndi:BPMNEdge id="Flow_hse_pr_di" bpmnElement="Flow_hse_pr">
         <di:waypoint x="360" y="960"/><di:waypoint x="420" y="960"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_procurement_ra_di" bpmnElement="Flow_procurement_ra">
+      <bpmndi:BPMNEdge id="Flow_hse_ra_di" bpmnElement="Flow_hse_ra">
         <di:waypoint x="560" y="960"/><di:waypoint x="620" y="960"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_logistics_pr_di" bpmnElement="Flow_logistics_pr">
+      <bpmndi:BPMNEdge id="Flow_construction_pr_di" bpmnElement="Flow_construction_pr">
         <di:waypoint x="360" y="1120"/><di:waypoint x="420" y="1120"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_logistics_ra_di" bpmnElement="Flow_logistics_ra">
+      <bpmndi:BPMNEdge id="Flow_construction_ra_di" bpmnElement="Flow_construction_ra">
         <di:waypoint x="560" y="1120"/><di:waypoint x="620" y="1120"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_commissioning_pr_di" bpmnElement="Flow_commissioning_pr">
+      <bpmndi:BPMNEdge id="Flow_qa_pr_di" bpmnElement="Flow_qa_pr">
         <di:waypoint x="360" y="1280"/><di:waypoint x="420" y="1280"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_commissioning_ra_di" bpmnElement="Flow_commissioning_ra">
+      <bpmndi:BPMNEdge id="Flow_qa_ra_di" bpmnElement="Flow_qa_ra">
         <di:waypoint x="560" y="1280"/><di:waypoint x="620" y="1280"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_design_planning_di" bpmnElement="Flow_design_planning">
+      <bpmndi:BPMNEdge id="Flow_commissioning_pr_di" bpmnElement="Flow_commissioning_pr">
+        <di:waypoint x="360" y="1440"/><di:waypoint x="420" y="1440"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_commissioning_ra_di" bpmnElement="Flow_commissioning_ra">
+        <di:waypoint x="560" y="1440"/><di:waypoint x="620" y="1440"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_design_contracts_di" bpmnElement="Flow_design_contracts">
         <di:waypoint x="760" y="160"/>
         <di:waypoint x="800" y="160"/>
         <di:waypoint x="800" y="280"/>
@@ -465,7 +518,7 @@
         <di:waypoint x="180" y="320"/>
         <di:waypoint x="220" y="320"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_planning_construction_di" bpmnElement="Flow_planning_construction">
+      <bpmndi:BPMNEdge id="Flow_contracts_procurement_di" bpmnElement="Flow_contracts_procurement">
         <di:waypoint x="760" y="320"/>
         <di:waypoint x="820" y="320"/>
         <di:waypoint x="820" y="440"/>
@@ -473,7 +526,7 @@
         <di:waypoint x="180" y="480"/>
         <di:waypoint x="220" y="480"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_construction_qa_di" bpmnElement="Flow_construction_qa">
+      <bpmndi:BPMNEdge id="Flow_procurement_planning_di" bpmnElement="Flow_procurement_planning">
         <di:waypoint x="760" y="480"/>
         <di:waypoint x="840" y="480"/>
         <di:waypoint x="840" y="600"/>
@@ -481,7 +534,7 @@
         <di:waypoint x="180" y="640"/>
         <di:waypoint x="220" y="640"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_qa_hse_di" bpmnElement="Flow_qa_hse">
+      <bpmndi:BPMNEdge id="Flow_planning_logistics_di" bpmnElement="Flow_planning_logistics">
         <di:waypoint x="760" y="640"/>
         <di:waypoint x="860" y="640"/>
         <di:waypoint x="860" y="760"/>
@@ -489,7 +542,7 @@
         <di:waypoint x="180" y="800"/>
         <di:waypoint x="220" y="800"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_hse_procurement_di" bpmnElement="Flow_hse_procurement">
+      <bpmndi:BPMNEdge id="Flow_logistics_hse_di" bpmnElement="Flow_logistics_hse">
         <di:waypoint x="760" y="800"/>
         <di:waypoint x="880" y="800"/>
         <di:waypoint x="880" y="920"/>
@@ -497,7 +550,7 @@
         <di:waypoint x="180" y="960"/>
         <di:waypoint x="220" y="960"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_procurement_logistics_di" bpmnElement="Flow_procurement_logistics">
+      <bpmndi:BPMNEdge id="Flow_hse_construction_di" bpmnElement="Flow_hse_construction">
         <di:waypoint x="760" y="960"/>
         <di:waypoint x="900" y="960"/>
         <di:waypoint x="900" y="1080"/>
@@ -505,7 +558,7 @@
         <di:waypoint x="180" y="1120"/>
         <di:waypoint x="220" y="1120"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_logistics_commissioning_di" bpmnElement="Flow_logistics_commissioning">
+      <bpmndi:BPMNEdge id="Flow_construction_qa_di" bpmnElement="Flow_construction_qa">
         <di:waypoint x="760" y="1120"/>
         <di:waypoint x="920" y="1120"/>
         <di:waypoint x="920" y="1240"/>
@@ -513,9 +566,17 @@
         <di:waypoint x="180" y="1280"/>
         <di:waypoint x="220" y="1280"/>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_last_end_di" bpmnElement="Flow_last_end">
+      <bpmndi:BPMNEdge id="Flow_qa_commissioning_di" bpmnElement="Flow_qa_commissioning">
         <di:waypoint x="760" y="1280"/>
-        <di:waypoint x="820" y="1280"/>
+        <di:waypoint x="940" y="1280"/>
+        <di:waypoint x="940" y="1400"/>
+        <di:waypoint x="180" y="1400"/>
+        <di:waypoint x="180" y="1440"/>
+        <di:waypoint x="220" y="1440"/>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_last_end_di" bpmnElement="Flow_last_end">
+        <di:waypoint x="760" y="1440"/>
+        <di:waypoint x="820" y="1440"/>
       </bpmndi:BPMNEdge>
 
     </bpmndi:BPMNPlane>

@@ -29,12 +29,13 @@
         },
         "choices": [
           { "name": "Design / Engineering", "value": "design" },
+          { "name": "Contract Management",  "value": "contracts" },
+          { "name": "Procurement",          "value": "procurement" },
           { "name": "Planning",             "value": "planning" },
+          { "name": "Logistics",            "value": "logistics" },
+          { "name": "HSE",                  "value": "hse" },
           { "name": "Construction",         "value": "construction" },
           { "name": "QA / QC",              "value": "qa" },
-          { "name": "HSE",                  "value": "hse" },
-          { "name": "Procurement",          "value": "procurement" },
-          { "name": "Logistics",            "value": "logistics" },
           { "name": "Commissioning",        "value": "commissioning" }
         ],
         "constraints": {

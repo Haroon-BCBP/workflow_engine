@@ -174,12 +174,19 @@ body {
 @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } }
 
 /* ── Modal ── */
-.modal-backdrop {
+.modal-overlay {
   position: fixed; inset: 0;
-  background: #00000080;
-  backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   z-index: 500;
+}
+.modal-backdrop {
+  position: absolute; inset: 0;
+  background: #00000080;
+  backdrop-filter: blur(4px);
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
 }
 .modal {
   background: var(--bg-card);
