@@ -7,19 +7,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type User struct {
-	UserID string `yaml:"user_id"`
-	Name   string `yaml:"name"`
-}
-
-type iamConfig struct {
-	Departments map[string]map[string]User `yaml:"departments"`
-	Admins      []User                     `yaml:"admins"`
-}
-
-type IAM struct {
-	cfg iamConfig
-}
 
 func Load(path string) (*IAM, error) {
 	data, err := os.ReadFile(path)

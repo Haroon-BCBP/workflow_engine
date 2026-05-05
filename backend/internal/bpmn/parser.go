@@ -6,75 +6,12 @@ import (
 	"strings"
 
 	"github.com/Haroon-BCBP/workflow_engine/internal/dsl"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 
-type Definitions struct {
-	XMLName   xml.Name  `xml:"definitions"`
-	Processes []Process `xml:"process"`
-}
 
-type Process struct {
-	ID          string         `xml:"id,attr"`
-	Name        string         `xml:"name,attr"`
-	LaneSet     *LaneSet       `xml:"laneSet"`
-	UserTasks   []UserTask     `xml:"userTask"`
-	StartEvents []StartEvent   `xml:"startEvent"`
-	EndEvents   []EndEvent     `xml:"endEvent"`
-	Gateways    []Gateway      `xml:"parallelGateway"`
-	ExcGateways []Gateway      `xml:"exclusiveGateway"`
-	Flows       []SequenceFlow `xml:"sequenceFlow"`
-}
-
-type LaneSet struct {
-	Lanes []Lane `xml:"lane"`
-}
-
-type Lane struct {
-	ID       string   `xml:"id,attr"`
-	Name     string   `xml:"name,attr"`
-	FlowRefs []string `xml:"flowNodeRef"`
-}
-
-type UserTask struct {
-	ID                string       `xml:"id,attr"`
-	Name              string       `xml:"name,attr"`
-	ExtensionElements *ExtElements `xml:"extensionElements"`
-}
-
-type StartEvent struct {
-	ID string `xml:"id,attr"`
-}
-
-type EndEvent struct {
-	ID string `xml:"id,attr"`
-}
-
-type Gateway struct {
-	ID   string `xml:"id,attr"`
-	Name string `xml:"name,attr"`
-}
-
-type SequenceFlow struct {
-	ID     string `xml:"id,attr"`
-	Source string `xml:"sourceRef,attr"`
-	Target string `xml:"targetRef,attr"`
-}
-
-type ExtElements struct {
-	Properties *ZeebeProperties `xml:"properties"`
-}
-
-type ZeebeProperties struct {
-	Properties []ZeebeProperty `xml:"property"`
-}
-
-type ZeebeProperty struct {
-	Name  string `xml:"name,attr"`
-	Value string `xml:"value,attr"`
-}
-
-type Parser struct{}
 
 func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
 	var defs Definitions
@@ -146,7 +83,7 @@ func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
 		}
 	}
 
-	execution := buildExecutionPlan(proc, deptOrder, deptMap)
+	execution := buildExecutionPlan(proc, deptOrder)
 
 	workflowName := proc.Name
 	if workflowName == "" {
@@ -231,7 +168,7 @@ func normalizeDeptID(name string) string {
 }
 
 func labelFromID(id string) string {
-	return strings.Title(strings.ReplaceAll(id, "_", " ")) //nolint:staticcheck
+	return cases.Title(language.English).String(strings.ReplaceAll(id, "_", " "))
 }
 
 func inferStageType(taskName string) string {
@@ -289,7 +226,7 @@ func sortStages(stages []dsl.StageDef) []dsl.StageDef {
 //     All dept IDs encountered across all branches of the same split form one parallel group.
 //  4. Walk deptOrder (lane order from the XML) to emit steps:
 //     sequential depts go into {sequential:[...]}, parallel groups go into {parallel:[...]}.
-func buildExecutionPlan(proc Process, deptOrder []string, deptMap map[string]*dsl.DepartmentDef) dsl.ExecutionPlan {
+func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 	if len(deptOrder) == 0 {
 		return dsl.ExecutionPlan{}
 	}

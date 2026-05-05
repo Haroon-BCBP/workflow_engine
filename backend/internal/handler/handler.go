@@ -74,7 +74,7 @@ func (h *Handler) GetYAML(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(yaml)) //nolint:errcheck
+	w.Write([]byte(yaml))
 }
 
 // Body: { "dept_id": "design", "to_stage": "review", "user_id": "u-d1" }
@@ -82,7 +82,7 @@ func (h *Handler) Transition(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig dsl.TransitionSignal
 	if err := json.NewDecoder(r.Body).Decode(&sig); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid body")
+		writeError(w, http.StatusBadRequest,"Invalid Transition Signal")
 		return
 	}
 	if err := h.svc.SendTransition(r.Context(), id, sig); err != nil {
@@ -97,7 +97,7 @@ func (h *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig dsl.CommentSignal
 	if err := json.NewDecoder(r.Body).Decode(&sig); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid body")
+		writeError(w, http.StatusBadRequest, "Invalid Comment Signal")
 		return
 	}
 	if err := h.svc.SendComment(r.Context(), id, sig); err != nil {
@@ -112,7 +112,7 @@ func (h *Handler) AdminRoute(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var sig dsl.AdminRoutingSignal
 	if err := json.NewDecoder(r.Body).Decode(&sig); err != nil {
-		writeError(w, http.StatusBadRequest, "invalid body")
+		writeError(w, http.StatusBadRequest, "Invalid Admin Routing Signal")
 		return
 	}
 	if err := h.svc.SendAdminRouting(r.Context(), id, sig); err != nil {
@@ -125,7 +125,7 @@ func (h *Handler) AdminRoute(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(v) //nolint:errcheck
+	json.NewEncoder(w).Encode(v)
 }
 
 func writeError(w http.ResponseWriter, code int, msg string) {
