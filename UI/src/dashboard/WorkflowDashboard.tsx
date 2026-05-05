@@ -103,7 +103,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   useEffect(() => {
     if (!selectedId) return;
     loadStatus(selectedId);
-    const interval = setInterval(() => loadStatus(selectedId), 3000);
+    const interval = setInterval(() => loadStatus(selectedId), 15000);
     return () => clearInterval(interval);
   }, [selectedId, loadStatus]);
 
@@ -115,7 +115,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
 
   const showToast = (msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 2000);
   };
 
   const handleTransition = async (deptId: string, toStage: string) => {
