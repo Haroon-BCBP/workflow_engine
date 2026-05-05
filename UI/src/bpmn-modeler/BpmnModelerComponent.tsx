@@ -24,11 +24,18 @@ import "./BpmnModeler.css";
 // @ts-ignore
 import initialDiagram from "./initial-diagram.bpmn?raw";
 // @ts-ignore
+import parallelDiagram from "./parallel-diagram.bpmn?raw";
+// @ts-ignore
 import templates from "./templates.json";
 
 interface Props {
   onWorkflowStarted?: (workflowId: string) => void;
 }
+
+const TEMPLATES = [
+  { id: "full", name: "Sequential (8 Depts)", xml: initialDiagram },
+  { id: "parallel", name: "Parallel Example", xml: parallelDiagram },
+];
 
 const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,6 +44,7 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState("full");
 
   useEffect(() => {
     if (containerRef.current && propertiesRef.current && !modelerRef.current) {
@@ -65,6 +73,19 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
       }
     };
   }, []);
+
+  const handleTemplateChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const id = e.target.value;
+    setSelectedTemplate(id);
+    const tmpl = TEMPLATES.find((t) => t.id === id);
+    if (tmpl && modelerRef.current) {
+      try {
+        await modelerRef.current.importXML(tmpl.xml);
+      } catch (err) {
+        console.error("Error switching template", err);
+      }
+    }
+  };
 
   const handleDownload = async () => {
     if (!modelerRef.current) return;
@@ -118,6 +139,21 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
   return (
     <div className="modeler-container">
       <div className="button-bar">
+        <div className="template-selector">
+          <label htmlFor="template-select">Template:</label>
+          <select
+            id="template-select"
+            value={selectedTemplate}
+            onChange={handleTemplateChange}
+          >
+            {TEMPLATES.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <button
           className="btn-primary"
           onClick={handleDownload}

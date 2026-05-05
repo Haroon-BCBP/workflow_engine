@@ -17,5 +17,11 @@ test:
 	go test ./...
 
 dev:
-	@echo "Run 'make api' and 'make worker' in separate terminals"
+	@echo "Run 'make watch-api' and 'make watch-worker' in separate terminals"
 	@echo "Then run 'cd ../UI && npm run dev' for the frontend"
+
+watch-api:
+	clear && air -c .air.toml
+
+watch-worker:
+	clear && air -c .air.worker.toml

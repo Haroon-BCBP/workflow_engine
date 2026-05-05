@@ -34,14 +34,13 @@ The backend consists of an **API Server** and a **Workflow Worker**.
 ```bash
 # Terminal 1: API
 cd backend
-air
+make watch-api
 
 ```
 
 ```sh
 # Terminal 2: Worker
-cd backend
-go run cmd/worker/main.go
+make watch-worker
 ```
 
 ### 3. Run the Frontend

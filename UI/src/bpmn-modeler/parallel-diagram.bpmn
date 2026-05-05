@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" id="Definitions_Para" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_Parallel" name="Parallel Procurement &amp; Planning" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_design" name="Design">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_design_prep</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_Split</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_procurement" name="Procurement">
+        <bpmn:flowNodeRef>Task_procurement_prep</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_planning" name="Planning">
+        <bpmn:flowNodeRef>Task_planning_prep</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_construction" name="Construction">
+        <bpmn:flowNodeRef>Gateway_Join</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_construction_prep</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="StartEvent_1" name="Start"/>
+
+    <bpmn:userTask id="Task_design_prep" name="Design Prep">
+      <bpmn:extensionElements><zeebe:properties><zeebe:property name="dept_id" value="design"/><zeebe:property name="stage_type" value="prep"/><zeebe:property name="role" value="preparer"/></zeebe:properties></bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_procurement_prep" name="Procurement Prep">
+      <bpmn:extensionElements><zeebe:properties><zeebe:property name="dept_id" value="procurement"/><zeebe:property name="stage_type" value="prep"/><zeebe:property name="role" value="preparer"/></zeebe:properties></bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_planning_prep" name="Planning Prep">
+      <bpmn:extensionElements><zeebe:properties><zeebe:property name="dept_id" value="planning"/><zeebe:property name="stage_type" value="prep"/><zeebe:property name="role" value="preparer"/></zeebe:properties></bpmn:extensionElements>
+    </bpmn:userTask>
+    <bpmn:userTask id="Task_construction_prep" name="Construction Prep">
+      <bpmn:extensionElements><zeebe:properties><zeebe:property name="dept_id" value="construction"/><zeebe:property name="stage_type" value="prep"/><zeebe:property name="role" value="preparer"/></zeebe:properties></bpmn:extensionElements>
+    </bpmn:userTask>
+
+
+    <bpmn:parallelGateway id="Gateway_Split" name="Split"/>
+    <bpmn:parallelGateway id="Gateway_Join" name="Join"/>
+
+    <bpmn:endEvent id="EndEvent_1" name="End"/>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_design_prep"/>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_design_prep" targetRef="Gateway_Split"/>
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Gateway_Split" targetRef="Task_procurement_prep"/>
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Gateway_Split" targetRef="Task_planning_prep"/>
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="Task_procurement_prep" targetRef="Gateway_Join"/>
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_planning_prep" targetRef="Gateway_Join"/>
+    <bpmn:sequenceFlow id="Flow_7" sourceRef="Gateway_Join" targetRef="Task_construction_prep"/>
+    <bpmn:sequenceFlow id="Flow_8" sourceRef="Task_construction_prep" targetRef="EndEvent_1"/>
+
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_Parallel">
+      <bpmndi:BPMNShape id="Lane_design_di" bpmnElement="Lane_design" isHorizontal="true">
+        <dc:Bounds x="30" y="80" width="1100" height="160"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_procurement_di" bpmnElement="Lane_procurement" isHorizontal="true">
+        <dc:Bounds x="30" y="240" width="1100" height="160"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_planning_di" bpmnElement="Lane_planning" isHorizontal="true">
+        <dc:Bounds x="30" y="400" width="1100" height="160"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_construction_di" bpmnElement="Lane_construction" isHorizontal="true">
+        <dc:Bounds x="30" y="560" width="1100" height="160"/>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1"><dc:Bounds x="102" y="142" width="36" height="36"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_design_prep_di" bpmnElement="Task_design_prep"><dc:Bounds x="220" y="125" width="140" height="70"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Split_di" bpmnElement="Gateway_Split"><dc:Bounds x="375" y="135" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_procurement_prep_di" bpmnElement="Task_procurement_prep"><dc:Bounds x="500" y="285" width="140" height="70"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_planning_prep_di" bpmnElement="Task_planning_prep"><dc:Bounds x="500" y="445" width="140" height="70"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Join_di" bpmnElement="Gateway_Join"><dc:Bounds x="675" y="615" width="50" height="50"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_construction_prep_di" bpmnElement="Task_construction_prep"><dc:Bounds x="800" y="605" width="140" height="70"/></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1"><dc:Bounds x="982" y="622" width="36" height="36"/></bpmndi:BPMNShape>
+
+
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1"><di:waypoint x="156" y="160"/><di:waypoint x="220" y="160"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2"><di:waypoint x="360" y="160"/><di:waypoint x="375" y="160"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3"><di:waypoint x="425" y="160"/><di:waypoint x="425" y="320"/><di:waypoint x="500" y="320"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4"><di:waypoint x="425" y="160"/><di:waypoint x="425" y="480"/><di:waypoint x="500" y="480"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_5_di" bpmnElement="Flow_5"><di:waypoint x="640" y="320"/><di:waypoint x="675" y="320"/><di:waypoint x="675" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_6_di" bpmnElement="Flow_6"><di:waypoint x="640" y="480"/><di:waypoint x="675" y="480"/><di:waypoint x="675" y="615"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_7_di" bpmnElement="Flow_7"><di:waypoint x="725" y="640"/><di:waypoint x="800" y="640"/></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_8_di" bpmnElement="Flow_8"><di:waypoint x="940" y="640"/><di:waypoint x="1000" y="640"/></bpmndi:BPMNEdge>
+
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

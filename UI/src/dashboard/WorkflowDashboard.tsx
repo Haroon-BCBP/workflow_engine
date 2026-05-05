@@ -107,6 +107,12 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
     return () => clearInterval(interval);
   }, [selectedId, loadStatus]);
 
+  useEffect(() => {
+    if (showAdmin && state?.rejected_by) {
+      setAdminGotoDept(state.rejected_by);
+    }
+  }, [showAdmin, state?.rejected_by]);
+
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
@@ -362,14 +368,14 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                           >
                             <div className="stage-dot" />
                             <span className="stage-step-label">
-                              {STAGE_LABELS[s]}
+                              {STAGE_LABELS[s] || s}
                             </span>
                           </div>
                         );
                       })}
                     </div>
 
-                    {dept.stage_status === "in_progress" && !isRejected && (
+                    {dept.stage_status === "in_progress" && !isRejected && state.status !== "paused" && (
                       <div className="dept-actions">
                         <div className="comment-row">
                           <input
@@ -434,17 +440,17 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                             <button
                               className="btn-sm btn-success"
                               onClick={() =>
-                                handleTransition(dept.dept_id, "approve")
+                                handleTransition(dept.dept_id, dept.current_stage)
                               }
-                              disabled={!!actionLoading || !dept.has_comment}
+                              disabled={!!actionLoading || (dept.current_stage === "approve" && !dept.has_comment)}
                               id={`btn-approve-${dept.dept_id}`}
                               title={
-                                dept.has_comment
-                                  ? ""
-                                  : "Add a comment before approving"
+                                dept.current_stage === "approve" && !dept.has_comment
+                                  ? "Add a comment before approving"
+                                  : ""
                               }
                             >
-                              ✓ Approve
+                              ✓ {dept.current_stage === "approve" ? "Approve" : "Complete"}
                             </button>
                           )}
                           <button

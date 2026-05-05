@@ -1,6 +1,7 @@
 vendor/
 bin/
 .env
+*.db
 
 # Logs
 logs

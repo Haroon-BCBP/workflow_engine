@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -36,11 +37,51 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 
 	transitionChan := workflow.GetSignalChannel(ctx, TransitionChannel)
 	commentChan := workflow.GetSignalChannel(ctx, CommentChannel)
+
+	deptTransitionChans := make(map[string]workflow.Channel)
+	deptCommentChans := make(map[string]workflow.Channel)
+	for _, d := range def.Departments {
+		deptTransitionChans[d.ID] = workflow.NewBufferedChannel(ctx,1024)
+		deptCommentChans[d.ID] = workflow.NewBufferedChannel(ctx,1024)
+	}
+
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		for {
+			selector := workflow.NewSelector(ctx)
+			selector.AddReceive(transitionChan, func(c workflow.ReceiveChannel, _ bool) {
+				var sig TransitionSignal
+				c.Receive(ctx, &sig)
+				if ch, ok := deptTransitionChans[sig.DeptID]; ok {
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						ch.Send(ctx, sig)
+					})
+				} else {
+					logger.Warn("Received transition signal for unknown dept", "dept", sig.DeptID)
+				}
+			})
+			selector.AddReceive(commentChan, func(c workflow.ReceiveChannel, _ bool) {
+				var sig CommentSignal
+				c.Receive(ctx, &sig)
+				if ch, ok := deptCommentChans[sig.DeptID]; ok {
+					workflow.Go(ctx, func(ctx workflow.Context) {
+						ch.Send(ctx, sig)
+					})
+				} else {
+					logger.Warn("Received comment signal for unknown dept", "dept", sig.DeptID)
+				}
+			})
+			selector.Select(ctx)
+			if ctx.Err() != nil {
+				return
+			}
+		}
+	})
+
 	adminChan := workflow.GetSignalChannel(ctx, AdminRoutingChannel)
 
 OuterLoop:
 	for {
-		for stepIdx := 0; stepIdx < len(def.Execution.Steps); stepIdx++ {
+		for stepIdx := state.CurrentStep; stepIdx < len(def.Execution.Steps); stepIdx++ {
 			step := def.Execution.Steps[stepIdx]
 			state.CurrentStep = stepIdx
 
@@ -50,13 +91,13 @@ OuterLoop:
 					if dept == nil {
 						return "", fmt.Errorf("dept %q not found in definition", deptID)
 					}
-					rejected, err := processDepartment(ctx, *dept, def, state, transitionChan, commentChan, adminChan)
+					rejected, err := processDepartment(ctx, *dept, def, state, deptTransitionChans[deptID], deptCommentChans[deptID])
 					if err != nil {
 						return "", err
 					}
 					if rejected {
 						logger.Info("Workflow paused for admin routing", "dept", deptID)
-						routed, err := waitForAdminRouting(ctx, def, state, transitionChan, commentChan, adminChan)
+						routed, err := waitForAdminRouting(ctx, def, state, adminChan)
 						if err != nil || !routed {
 							state.Status = WorkflowRejected
 							return "Workflow terminated by admin", nil
@@ -67,8 +108,18 @@ OuterLoop:
 			}
 
 			if len(step.Parallel) > 0 {
-				if err := runParallel(ctx, step.Parallel, def, state, transitionChan, commentChan, adminChan); err != nil {
+				rejected, err := runParallel(ctx, step.Parallel, def, state, deptTransitionChans, deptCommentChans)
+				if err != nil {
 					return "", err
+				}
+				if rejected {
+					logger.Info("Workflow paused for admin routing (parallel rejection)")
+					routed, err := waitForAdminRouting(ctx, def, state, adminChan)
+					if err != nil || !routed {
+						state.Status = WorkflowRejected
+						return "Workflow terminated by admin", nil
+					}
+					continue OuterLoop
 				}
 			}
 		}
@@ -88,12 +139,15 @@ func processDepartment(
 	def WorkflowDef,
 	state *WorkflowState,
 	transitionChan, commentChan workflow.ReceiveChannel,
-	adminChan workflow.ReceiveChannel,
 ) (rejected bool, err error) {
 	logger := workflow.GetLogger(ctx)
 	progress := state.Progress[dept.ID]
 
 	for _, stage := range dept.Stages {
+		if progress.StageStatus == StageStatusPending && stage.Type != progress.CurrentStage {
+			continue
+		}
+
 		progress.CurrentStage = stage.Type
 		progress.StageStatus = StageStatusInProgress
 		progress.HasComment = false
@@ -104,7 +158,6 @@ func processDepartment(
 		actCtx := workflow.WithActivityOptions(ctx, ao)
 		_ = workflow.ExecuteActivity(actCtx, StageStartedActivity, dept.ID, string(stage.Type)).Get(actCtx, nil)
 
-		// Wait for user signals (transition or comment)
 		for {
 			var done bool
 			var wasRejected bool
@@ -169,6 +222,9 @@ func processDepartment(
 			})
 
 			selector.Select(ctx)
+			if ctx.Err() != nil {
+				return false, ctx.Err()
+			}
 
 			if done {
 				if wasRejected {
@@ -192,7 +248,7 @@ func waitForAdminRouting(
 	ctx workflow.Context,
 	def WorkflowDef,
 	state *WorkflowState,
-	transitionChan, commentChan, adminChan workflow.ReceiveChannel,
+	adminChan workflow.ReceiveChannel,
 ) (bool, error) {
 	logger := workflow.GetLogger(ctx)
 	var routed bool
@@ -225,61 +281,111 @@ func runParallel(
 	deptIDs []string,
 	def WorkflowDef,
 	state *WorkflowState,
-	transitionChan, commentChan, adminChan workflow.ReceiveChannel,
-) error {
+	deptTransitionChans, deptCommentChans map[string]workflow.Channel,
+) (bool, error) {
 	childCtx, cancel := workflow.WithCancel(ctx)
+	defer cancel()
+
 	selector := workflow.NewSelector(ctx)
 	var firstErr error
+	var wasRejected bool
+	completedCount := 0
 
 	for _, deptID := range deptIDs {
 		dept := findDept(def, deptID)
 		if dept == nil {
-			cancel()
-			return fmt.Errorf("dept %q not found", deptID)
+			return false, fmt.Errorf("dept %q not found", deptID)
 		}
 		d := *dept
+		tChan := deptTransitionChans[deptID]
+		cChan := deptCommentChans[deptID]
+
 		future, settable := workflow.NewFuture(childCtx)
 		workflow.Go(childCtx, func(ctx workflow.Context) {
-			_, err := processDepartment(ctx, d, def, state, transitionChan, commentChan, adminChan)
-			settable.Set(nil, err)
+			rejected, err := processDepartment(ctx, d, def, state, tChan, cChan)
+			settable.Set(rejected, err)
 		})
 		selector.AddFuture(future, func(f workflow.Future) {
-			if err := f.Get(ctx, nil); err != nil && firstErr == nil {
-				cancel()
-				firstErr = err
+			var rejected bool
+			if err := f.Get(ctx, &rejected); err != nil {
+				if firstErr == nil && !temporal.IsCanceledError(err) {
+					firstErr = err
+				}
+			} else if rejected {
+				wasRejected = true
 			}
+			completedCount++
 		})
 	}
 
-	for i := 0; i < len(deptIDs); i++ {
+	for completedCount < len(deptIDs) {
 		selector.Select(ctx)
 		if firstErr != nil {
+			return false, firstErr
+		}
+		if wasRejected {
 			cancel()
-			return firstErr
+			// Safety: Wait up to 2 seconds for branches to acknowledge cancellation
+			timerCtx, timerCancel := workflow.WithCancel(ctx)
+			timer := workflow.NewTimer(timerCtx, 2*time.Second)
+			selector.AddFuture(timer, func(f workflow.Future) {
+				timerCancel() // Stop waiting
+			})
+
+			for completedCount < len(deptIDs) && timerCtx.Err() == nil {
+				selector.Select(ctx)
+			}
+			return true, nil
 		}
 	}
-	cancel()
-	return nil
+
+	return false, nil
 }
 
 // resetFrom clears progress for deptID (from given stage) and all depts after it in the plan.
 func resetFrom(def WorkflowDef, state *WorkflowState, fromDeptID string, fromStage StageType) {
 	found := false
-	for _, step := range def.Execution.Steps {
+	targetStepIdx := -1
+	for i, step := range def.Execution.Steps {
+		// Check if this step contains our target department
 		depts := append(step.Sequential, step.Parallel...)
+		stepContainsTarget := false
 		for _, id := range depts {
 			if id == fromDeptID {
-				found = true
+				stepContainsTarget = true
+				break
 			}
-			if found {
+		}
+
+		if stepContainsTarget {
+			found = true
+			if targetStepIdx == -1 {
+				targetStepIdx = i
+			}
+		}
+
+		if found {
+			for _, id := range depts {
 				if p, ok := state.Progress[id]; ok {
-					p.CurrentStage = fromStage
+					if id == fromDeptID {
+						p.CurrentStage = fromStage
+					} else {
+						// Reset others to their very first stage
+						deptDef := findDept(def, id)
+						if deptDef != nil && len(deptDef.Stages) > 0 {
+							p.CurrentStage = deptDef.Stages[0].Type
+						}
+					}
 					p.StageStatus = StageStatusPending
 					p.HasComment = false
 					p.Comments = nil
 				}
 			}
 		}
+	}
+
+	if targetStepIdx != -1 {
+		state.CurrentStep = targetStepIdx
 	}
 	state.Status = WorkflowRunning
 	state.RejectedBy = ""
