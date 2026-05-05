@@ -32,17 +32,13 @@ The backend consists of an **API Server** and a **Workflow Worker**.
 **Using Air (Live Reload):**
 
 ```bash
-cd backend
-air # This runs both the API and the Worker
-```
-
-**Manual Run:**
-
-```bash
 # Terminal 1: API
 cd backend
-go run cmd/api/main.go
+air
 
+```
+
+```sh
 # Terminal 2: Worker
 cd backend
 go run cmd/worker/main.go
