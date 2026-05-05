@@ -13,23 +13,9 @@ The system allows administrators to model workflows in a visual BPMN editor, ass
 
 ---
 
-## 🛠 Tech Stack
+## How to Run
 
-- **Backend**: Go 1.21+, Temporal SDK, SQLite (via SQLc/Goose).
-- **Frontend**: React, Vite, `bpmn-js`, `bpmn-js-properties-panel`.
-- **Infrastructure**: Temporal Server (Local).
-
----
-
-## 🏃 How to Run
-
-### 1. Prerequisites
-
-- **Temporal CLI**: Install via `brew install temporal`.
-- **Go**: 1.21 or higher.
-- **Node.js**: 18 or higher (with `npm`).
-
-### 2. Start Temporal Server
+### 1. Start Temporal Server
 
 In a new terminal window, start the local Temporal dev server:
 
@@ -39,7 +25,7 @@ temporal server start-dev
 
 *The server will be available at `localhost:7233` and the Web UI at `localhost:8233`.*
 
-### 3. Run the Backend
+### 2. Run the Backend
 
 The backend consists of an **API Server** and a **Workflow Worker**.
 
@@ -62,7 +48,7 @@ cd backend
 go run cmd/worker/main.go
 ```
 
-### 4. Run the Frontend
+### 3. Run the Frontend
 
 ```bash
 cd UI
@@ -74,7 +60,7 @@ npm run dev
 
 ---
 
-## 📖 Using the POC
+## Using the POC
 
 1. **Modeler**: Go to the **BPMN Modeler** tab. You'll see a pre-loaded diagram with 8 departments.
 2. **Assign Roles**: Select a task (e.g., "Prep" in Design) and use the **Department Stage Task** template in the properties panel to set the `dept_id` and `role`.
@@ -87,9 +73,3 @@ npm run dev
    - (Admin) Use the **Route Rejection** button to send the workflow back to an earlier stage.
 
 ---
-
-## 📁 Repository Structure
-
-- `/backend`: Core logic, BPMN parser, DSL engine, and Temporal workers.
-- `/UI`: React application with BPMN-js integration and status dashboard.
-- `/Notes`: Project context and requirements.
