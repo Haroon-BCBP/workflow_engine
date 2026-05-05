@@ -1,0 +1,69 @@
+{
+  "$schema": "https://unpkg.com/@camunda/element-templates-json-schema/resources/schema.json",
+  "name": "Department Stage Task",
+  "id": "workflow-engine.dept-stage-task",
+  "description": "A stage task (Prep, Review, or Approve) for a workflow engine department.",
+  "version": 1,
+  "appliesTo": ["bpmn:UserTask"],
+  "properties": [
+    {
+      "label": "Department",
+      "description": "The department this task belongs to",
+      "binding": {
+        "type": "zeebe:property",
+        "name": "dept_id"
+      },
+      "type": "Dropdown",
+      "choices": [
+        { "name": "Design / Engineering", "value": "design" },
+        { "name": "Planning",             "value": "planning" },
+        { "name": "Construction",         "value": "construction" },
+        { "name": "QA / QC",              "value": "qa" },
+        { "name": "HSE",                  "value": "hse" },
+        { "name": "Procurement",          "value": "procurement" },
+        { "name": "Logistics",            "value": "logistics" },
+        { "name": "Commissioning",        "value": "commissioning" }
+      ],
+      "value": "design"
+    },
+    {
+      "label": "Stage Type",
+      "description": "The stage type within the department",
+      "binding": {
+        "type": "zeebe:property",
+        "name": "stage_type"
+      },
+      "type": "Dropdown",
+      "choices": [
+        { "name": "Prep",    "value": "prep" },
+        { "name": "Review",  "value": "review" },
+        { "name": "Approve", "value": "approve" }
+      ],
+      "value": "prep"
+    },
+    {
+      "label": "Assignee Role",
+      "description": "The IAM role responsible for this stage",
+      "binding": {
+        "type": "zeebe:property",
+        "name": "role"
+      },
+      "type": "Dropdown",
+      "choices": [
+        { "name": "Preparer",  "value": "preparer" },
+        { "name": "Reviewer",  "value": "reviewer" },
+        { "name": "Approver",  "value": "approver" }
+      ],
+      "value": "preparer"
+    },
+    {
+      "label": "Requires Comment Before Approve",
+      "binding": {
+        "type": "zeebe:property",
+        "name": "requires_comment"
+      },
+      "type": "Boolean",
+      "value": true
+    }
+  ]
+}
