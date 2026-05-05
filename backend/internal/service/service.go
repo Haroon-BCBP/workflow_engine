@@ -85,6 +85,18 @@ func (s *WorkflowService) GetStatus(ctx context.Context, workflowID string) (*ds
 	if err := resp.Get(&state); err != nil {
 		return nil, fmt.Errorf("service: decode state: %w", err)
 	}
+
+	// Backfill Execution plan if missing (for older workflows)
+	if len(state.Execution.Steps) == 0 {
+		run, err := s.repo.GetByID(ctx, workflowID)
+		if err == nil {
+			var def dsl.WorkflowDef
+			if err := yaml.Unmarshal([]byte(run.DSLYAML), &def); err == nil {
+				state.Execution = def.Execution
+			}
+		}
+	}
+
 	return &state, nil
 }
 

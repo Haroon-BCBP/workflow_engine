@@ -196,26 +196,26 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   const deptList: DepartmentProgress[] = state
     ? state.progress
       ? (() => {
-          // Order departments based on execution steps
           const ordered: DepartmentProgress[] = [];
           const seen = new Set<string>();
 
           if (state.execution && state.execution.steps) {
             state.execution.steps.forEach((step: any) => {
-              const ids = [
-                ...(step.sequential || []),
-                ...(step.parallel || []),
-              ];
+              // Handle both capitalized and lowercase from backend
+              const seq = step.sequential || step.Sequential || [];
+              const par = step.parallel || step.Parallel || [];
+              const ids = [...seq, ...par];
+
               ids.forEach((id) => {
-                if (state.progress[id] && !seen.has(id)) {
-                  ordered.push(state.progress[id]);
+                const prog = state.progress[id];
+                if (prog && !seen.has(id)) {
+                  ordered.push(prog);
                   seen.add(id);
                 }
               });
             });
           }
 
-          // Add any remaining depts not in execution plan (fallback)
           Object.keys(state.progress).forEach((id) => {
             if (!seen.has(id)) {
               ordered.push(state.progress[id]);
