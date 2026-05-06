@@ -72,5 +72,4 @@ npm run dev
 
 ## Issues/ Pending
 
-1. Failures at parallel gateways: If a stage is rejected at a parallel gateway We need to consider how to send it previous stage, and also how to handle the other parallel stage which may or may not have been done. For now the workflow is marked failed if it fails at parallel stage, and current idea is to send back/ restart the whole workflow from last non parallel stage
-2. If we need to send from some stage to previous one but the previous one is a parallel stage, should that be considered both stages redo or single just the one.
+1. [x] Failures at parallel gateways: Handled by sending to last non parallel workflow, but may need to consider the documents each of them receives to check independence.
