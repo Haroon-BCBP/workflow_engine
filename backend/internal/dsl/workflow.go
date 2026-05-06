@@ -269,8 +269,9 @@ func processDepartment(
 	return false, nil // Standard completion
 }
 
-// waitForAdminRouting blocks until admin sends a routing or terminate signal.
+// waitForAdminRouting blocks until admin sends a valid routing or terminate signal.
 // Returns true if admin chose to route (continue), false if terminate.
+// Loops on unrecognized actions so stale or malformed signals don't accidentally terminate.
 func waitForAdminRouting(
 	ctx workflow.Context,
 	def WorkflowDef,
@@ -278,28 +279,26 @@ func waitForAdminRouting(
 	adminChan workflow.ReceiveChannel,
 ) (bool, error) {
 	logger := workflow.GetLogger(ctx)
-	var routed bool
 
-	selector := workflow.NewSelector(ctx)
-	selector.AddReceive(adminChan, func(c workflow.ReceiveChannel, _ bool) {
+	for {
 		var sig AdminRoutingSignal
-		c.Receive(ctx, &sig)
+		adminChan.Receive(ctx, &sig)
+		if ctx.Err() != nil {
+			return false, ctx.Err()
+		}
 
-		if sig.Action == "terminate" {
+		switch sig.Action {
+		case "terminate":
 			logger.Info("Admin terminated workflow", "admin", sig.AdminID)
-			routed = false
-			return
-		}
-
-		if sig.Action == "goto" {
+			return false, nil
+		case "goto":
 			logger.Info("Admin routing workflow", "admin", sig.AdminID, "dept", sig.DeptID, "stage", sig.Stage)
-			// Reset progress for the target dept and all subsequent depts
 			resetFrom(def, state, sig.DeptID, sig.Stage)
-			routed = true
+			return true, nil
+		default:
+			logger.Warn("Ignoring unrecognized admin action, waiting for next signal", "action", sig.Action)
 		}
-	})
-	selector.Select(ctx)
-	return routed, nil
+	}
 }
 
 // runParallel runs a set of departments concurrently and waits for all to complete.
@@ -351,15 +350,15 @@ func runParallel(
 			return false, firstErr
 		}
 		if wasRejected {
+			// Cancel sibling branches and drain their futures so Temporal's
+			// goroutine scheduler is clean before we return.
 			cancel()
-			// Safety: Wait up to 2 seconds for branches to acknowledge cancellation
-			timerCtx, timerCancel := workflow.WithCancel(ctx)
-			timer := workflow.NewTimer(timerCtx, 2*time.Second)
-			selector.AddFuture(timer, func(f workflow.Future) {
-				timerCancel() // Stop waiting
+			timerExpired := false
+			timerFuture := workflow.NewTimer(ctx, 2*time.Second)
+			selector.AddFuture(timerFuture, func(f workflow.Future) {
+				timerExpired = true
 			})
-
-			for completedCount < len(deptIDs) && timerCtx.Err() == nil {
+			for completedCount < len(deptIDs) && !timerExpired {
 				selector.Select(ctx)
 			}
 			return true, nil

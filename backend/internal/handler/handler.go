@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -115,10 +116,13 @@ func (h *Handler) AdminRoute(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "Invalid Admin Routing Signal")
 		return
 	}
+	log.Println("message: Admin Routing Signal", "signal: ", sig)
 	if err := h.svc.SendAdminRouting(r.Context(), id, sig); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
+		log.Println("error", err.Error())
 		return
 	}
+	log.Println("message: Admin Routing Signal sent")
 	writeJSON(w, http.StatusOK, map[string]string{"status": "routing signal sent"})
 }
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
 	"gopkg.in/yaml.v3"
 
@@ -77,16 +78,22 @@ func (s *WorkflowService) Submit(ctx context.Context, bpmnXML string) (*SubmitRe
 }
 
 func (s *WorkflowService) GetStatus(ctx context.Context, workflowID string) (*dsl.WorkflowState, error) {
-	resp, err := s.temporalClient.QueryWorkflow(ctx, workflowID, "", dsl.QueryStatus)
+	// QueryRejectCondition_NONE allows querying closed (completed/terminated) workflows.
+	// Without this, Temporal returns an error for non-running executions, leaving the UI
+	// stuck on the last known state instead of reflecting the final rejected/approved status.
+	resp, err := s.temporalClient.QueryWorkflowWithOptions(ctx, &client.QueryWorkflowWithOptionsRequest{
+		WorkflowID:           workflowID,
+		QueryType:            dsl.QueryStatus,
+		QueryRejectCondition: enums.QUERY_REJECT_CONDITION_NONE,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("service: query workflow: %w", err)
 	}
 	var state dsl.WorkflowState
-	if err := resp.Get(&state); err != nil {
+	if err := resp.QueryResult.Get(&state); err != nil {
 		return nil, fmt.Errorf("service: decode state: %w", err)
 	}
 
-	// Backfill Execution plan if missing (for older workflows)
 	if len(state.Execution.Steps) == 0 {
 		run, err := s.repo.GetByID(ctx, workflowID)
 		if err == nil {
