@@ -1,6 +1,12 @@
 # Hybrid BPMN Workflow Engine (POC)
 
-A stateful, human-in-the-loop workflow engine built with **Go**, **Temporal**, and **React**. This POC demonstrates how to orchestrate construction processes using BPMN diagrams that are translated into Temporal DSL for reliable execution.
+A stateful, human-in-the-loop workflow engine built with **Go**, **Temporal**, and **React**.
+
+---
+
+> For detailed technical details on the architecture, working logic, and capabilities, please refer to the **[DOCUMENTATION.md](DOCUMENTATION.md)**.
+
+---
 
 ## Overview
 
