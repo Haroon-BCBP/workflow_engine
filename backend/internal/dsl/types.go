@@ -36,6 +36,7 @@ type ExecutionPlan struct {
 type ExecutionStep struct {
 	Sequential []string `yaml:"sequential,omitempty" json:"sequential,omitempty"`
 	Parallel   []string `yaml:"parallel,omitempty" json:"parallel,omitempty"`
+	Exclusive  []string `yaml:"exclusive,omitempty" json:"exclusive,omitempty"`
 }
 
 type WorkflowState struct {
@@ -55,6 +56,7 @@ const (
 	WorkflowApproved WorkflowStatus = "approved"
 	WorkflowRejected WorkflowStatus = "rejected"
 	WorkflowPaused   WorkflowStatus = "paused" // waiting for admin routing after rejection
+	WorkflowPausedXOR WorkflowStatus = "paused_xor" // waiting for admin to select XOR path
 )
 
 type DepartmentProgress struct {
@@ -96,6 +98,11 @@ type CommentSignal struct {
 	Text   string    `json:"text"`
 }
 
+type DocumentSignal struct {
+	DeptID string    `json:"dept_id"`
+	Stage  StageType `json:"stage"`
+}
+
 type AdminRoutingSignal struct {
 	Action  string    `json:"action"` // "goto" | "terminate"
 	DeptID  string    `json:"dept_id,omitempty"`
@@ -106,6 +113,7 @@ type AdminRoutingSignal struct {
 const (
 	TransitionChannel   = "StageTransitionChannel"
 	CommentChannel      = "CommentChannel"
+	DocumentChannel     = "DocumentChannel"
 	AdminRoutingChannel = "AdminRoutingChannel"
 	QueryStatus         = "GetWorkflowStatus"
 	TaskQueue           = "workflow-engine-queue"

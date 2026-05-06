@@ -122,6 +122,48 @@ OuterLoop:
 					continue OuterLoop
 				}
 			}
+
+			if len(step.Exclusive) > 0 {
+				logger.Info("Workflow paused for XOR routing", "options", step.Exclusive)
+				state.Status = WorkflowPausedXOR
+				
+				var chosenDept string
+				for {
+					var sig AdminRoutingSignal
+					adminChan.Receive(ctx, &sig)
+					if ctx.Err() != nil {
+						return "", ctx.Err()
+					}
+					if sig.Action == "xor_route" {
+						chosenDept = sig.DeptID
+						break
+					} else if sig.Action == "terminate" {
+						state.Status = WorkflowRejected
+						return "Workflow terminated by admin", nil
+					}
+				}
+				
+				state.Status = WorkflowRunning
+				logger.Info("Admin chose XOR branch", "dept", chosenDept)
+				
+				dept := findDept(def, chosenDept)
+				if dept == nil {
+					return "", fmt.Errorf("dept %q not found in definition", chosenDept)
+				}
+				rejected, err := processDepartment(ctx, *dept, def, state, deptTransitionChans[chosenDept], deptCommentChans[chosenDept])
+				if err != nil {
+					return "", err
+				}
+				if rejected {
+					logger.Info("Workflow paused for admin routing (xor rejection)", "dept", chosenDept)
+					routed, err := waitForAdminRouting(ctx, def, state, adminChan)
+					if err != nil || !routed {
+						state.Status = WorkflowRejected
+						return "Workflow terminated by admin", nil
+					}
+					continue OuterLoop
+				}
+			}
 		}
 		break // Finished all steps
 	}

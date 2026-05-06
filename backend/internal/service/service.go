@@ -123,6 +123,30 @@ func (s *WorkflowService) ListRuns(ctx context.Context) ([]repository.WorkflowRu
 	return s.repo.List(ctx)
 }
 
+func (s *WorkflowService) UploadDocument(ctx context.Context, workflowID, deptID, stage, filename, userID string) (repository.Document, error) {
+	doc := repository.Document{
+		ID:         uuid.New().String(),
+		WorkflowID: workflowID,
+		DeptID:     deptID,
+		Stage:      stage,
+		Filename:   filename,
+		UserID:     userID,
+		CreatedAt:  time.Now(),
+	}
+	if err := s.repo.SaveDocument(ctx, doc); err != nil {
+		return doc, err
+	}
+	err := s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.DocumentChannel, dsl.DocumentSignal{
+		DeptID: deptID,
+		Stage:  dsl.StageType(stage),
+	})
+	return doc, err
+}
+
+func (s *WorkflowService) GetDocuments(ctx context.Context, workflowID, deptID, stage string) ([]repository.Document, error) {
+	return s.repo.GetDocuments(ctx, workflowID, deptID, stage)
+}
+
 func (s *WorkflowService) GetYAML(ctx context.Context, workflowID string) (string, error) {
 	run, err := s.repo.GetByID(ctx, workflowID)
 	if err != nil {

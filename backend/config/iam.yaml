@@ -1,36 +1,50 @@
 departments:
   design:
-    preparer:  { user_id: "u-d1", name: "Alice Hassan" }
-    reviewer:  { user_id: "u-d2", name: "Bob Malik" }
-    approver:  { user_id: "u-d3", name: "Carol Siddiqui" }
+    preparer:  
+      - { user_id: "u-d1", name: "Alice" }
+      - { user_id: "u-d1-b", name: "Alice 2" }
+    reviewer:  
+      - { user_id: "u-d2", name: "Bob" }
+      - { user_id: "u-d2-b", name: "Bob 2" }
+    approver:  
+      - { user_id: "u-d3", name: "Carol" }
   planning:
-    preparer:  { user_id: "u-p1", name: "Dave Ansari" }
-    reviewer:  { user_id: "u-p2", name: "Eve Qureshi" }
-    approver:  { user_id: "u-p3", name: "Frank Baig" }
+    preparer:  
+      - { user_id: "u-p1", name: "Dave" }
+      - { user_id: "u-p1-b", name: "Dave 2" }
+    reviewer:  
+      - { user_id: "u-p2", name: "Eve" }
+      - { user_id: "u-p2-b", name: "Eve 2" }
+    approver:  
+      - { user_id: "u-p3", name: "Frank" }
   construction:
-    preparer:  { user_id: "u-c1", name: "Grace Tariq" }
-    reviewer:  { user_id: "u-c2", name: "Henry Raza" }
-    approver:  { user_id: "u-c3", name: "Iris Noor" }
+    preparer:  [{ user_id: "u-c1", name: "Grace" }]
+    reviewer:  
+      - { user_id: "u-c2", name: "Henry" }
+      - { user_id: "u-c2-b", name: "Henry 2" }
+    approver:  [{ user_id: "u-c3", name: "Iris" }]
   qa:
-    preparer:  { user_id: "u-q1", name: "Jack Alam" }
-    reviewer:  { user_id: "u-q2", name: "Karen Shah" }
-    approver:  { user_id: "u-q3", name: "Leo Mirza" }
+    preparer:  [{ user_id: "u-q1", name: "Jack" }]
+    reviewer:  
+      - { user_id: "u-q2", name: "Karen" }
+      - { user_id: "u-q2-b", name: "Karen 2" }
+    approver:  [{ user_id: "u-q3", name: "Leo" }]
   hse:
-    preparer:  { user_id: "u-h1", name: "Mia Farooq" }
-    reviewer:  { user_id: "u-h2", name: "Noah Ishaq" }
-    approver:  { user_id: "u-h3", name: "Olivia Ghani" }
+    preparer:  [{ user_id: "u-h1", name: "Mia" }]
+    reviewer:  [{ user_id: "u-h2", name: "Noah" }]
+    approver:  [{ user_id: "u-h3", name: "Olivia" }]
   procurement:
-    preparer:  { user_id: "u-pr1", name: "Paul Zuberi" }
-    reviewer:  { user_id: "u-pr2", name: "Quinn Riaz" }
-    approver:  { user_id: "u-pr3", name: "Rachel Chaudhry" }
+    preparer:  [{ user_id: "u-pr1", name: "Paul" }]
+    reviewer:  [{ user_id: "u-pr2", name: "Quinn" }]
+    approver:  [{ user_id: "u-pr3", name: "Rachel" }]
   logistics:
-    preparer:  { user_id: "u-l1", name: "Sam Niazi" }
-    reviewer:  { user_id: "u-l2", name: "Tina Bukhari" }
-    approver:  { user_id: "u-l3", name: "Uma Syed" }
+    preparer:  [{ user_id: "u-l1", name: "Sam" }]
+    reviewer:  [{ user_id: "u-l2", name: "Tina" }]
+    approver:  [{ user_id: "u-l3", name: "Uma" }]
   commissioning:
-    preparer:  { user_id: "u-com1", name: "Victor Abbasi" }
-    reviewer:  { user_id: "u-com2", name: "Wendy Akhtar" }
-    approver:  { user_id: "u-com3", name: "Xander Javed" }
+    preparer:  [{ user_id: "u-com1", name: "Victor" }]
+    reviewer:  [{ user_id: "u-com2", name: "Wendy" }]
+    approver:  [{ user_id: "u-com3", name: "Xander" }]
 
 admins:
   - { user_id: "admin-1", name: "Admin User" }

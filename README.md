@@ -71,5 +71,6 @@ npm run dev
 
 ## Issues/ Pending
 
-1. [x] Failures at parallel gateways: Handled by sending to last non parallel workflow, but may need to consider the documents each of them receives to check independence.
+1. [x] Failures at parallel gateways: Handled by sending to last non parallel workflow,the documents each are assumed independence.
 2. [ ] Limit BPMN to only custom modules with Departments and Stages
+3. [ ] Add document passing and dept assigning in XOR gateways

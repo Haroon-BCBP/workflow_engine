@@ -11,6 +11,7 @@ import (
 	"go.temporal.io/sdk/client"
 
 	"github.com/Haroon-BCBP/workflow_engine/internal/handler"
+	"github.com/Haroon-BCBP/workflow_engine/internal/iam"
 	"github.com/Haroon-BCBP/workflow_engine/internal/repository"
 	"github.com/Haroon-BCBP/workflow_engine/internal/service"
 )
@@ -33,7 +34,13 @@ func main() {
 
 	svc := service.New(repo, tc)
 
-	h := handler.New(svc)
+	iamPath := getEnv("IAM_PATH", "config/iam.yaml")
+	iamSvc, err := iam.Load(iamPath)
+	if err != nil {
+		log.Fatalf("Failed to load IAM config: %v", err)
+	}
+
+	h := handler.New(svc, iamSvc)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Recoverer)
@@ -45,6 +52,7 @@ func main() {
 	}))
 	
 	r.Get("/health", h.HealthCheck)
+	r.Get("/api/v1/users", h.GetUsers)
 	
 	r.Route("/api/v1/workflows", func(r chi.Router) {
 		r.Use(middleware.Logger)
@@ -54,6 +62,8 @@ func main() {
 		r.Post("/{id}/transition", h.Transition)
 		r.Post("/{id}/comment", h.Comment)
 		r.Post("/{id}/route", h.AdminRoute)
+		r.Post("/{id}/documents", h.UploadDocument)
+		r.Get("/{id}/documents", h.GetDocuments)
 	})
 	
 	r.Get("/api/v1/workflows/{id}", h.GetStatus)

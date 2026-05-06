@@ -26,6 +26,8 @@ import initialDiagram from "./initial-diagram.bpmn?raw";
 // @ts-ignore
 import parallelDiagram from "./parallel-diagram.bpmn?raw";
 // @ts-ignore
+import xorDiagram from "./xor-diagram.bpmn?raw";
+// @ts-ignore
 import templates from "./templates.json";
 
 interface Props {
@@ -35,6 +37,7 @@ interface Props {
 const TEMPLATES = [
   { id: "full", name: "Sequential (8 Depts)", xml: initialDiagram },
   { id: "parallel", name: "Parallel Example", xml: parallelDiagram },
+  { id: "xor", name: "XOR Documents Workflow", xml: xorDiagram },
 ];
 
 const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {

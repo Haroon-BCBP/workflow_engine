@@ -243,7 +243,8 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 		incoming[flow.Target] = append(incoming[flow.Target], flow.Source)
 	}
 
-	splitGWs := make(map[string]bool) // diverging: >1 outgoing edges
+	splitGWs := make(map[string]bool) // diverging parallel: >1 outgoing edges
+	excSplitGWs := make(map[string]bool) // diverging exclusive
 	joinGWs := make(map[string]bool)  // converging: >1 incoming edges
 	for _, gw := range proc.Gateways {
 		if len(outgoing[gw.ID]) > 1 {
@@ -253,8 +254,16 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 			joinGWs[gw.ID] = true
 		}
 	}
+	for _, gw := range proc.ExcGateways {
+		if len(outgoing[gw.ID]) > 1 {
+			excSplitGWs[gw.ID] = true
+		}
+		if len(incoming[gw.ID]) > 1 {
+			joinGWs[gw.ID] = true
+		}
+	}
 
-	if len(splitGWs) == 0 {
+	if len(splitGWs) == 0 && len(excSplitGWs) == 0 {
 		return dsl.ExecutionPlan{
 			Steps: []dsl.ExecutionStep{{Sequential: deptOrder}},
 		}
@@ -262,23 +271,31 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 
 	taskLane := buildTaskLaneMap(proc)
 	taskToDept := make(map[string]string)
+	for _, t := range proc.UserTasks {
+		if props := zeebeProps(t); props["dept_id"] != "" {
+			taskToDept[t.ID] = props["dept_id"]
+		}
+	}
 	for taskID, laneName := range taskLane {
-		if id := normalizeDeptID(laneName); id != "" {
-			taskToDept[taskID] = id
+		if _, ok := taskToDept[taskID]; !ok {
+			if id := normalizeDeptID(laneName); id != "" {
+				taskToDept[taskID] = id
+			}
 		}
 	}
 
 	// For each split gateway we BFS along every outgoing branch, stopping when
 	// we reach a join gateway. All dept IDs found across all branches form one
 	// parallel group (they all run concurrently between the split and join).
-	type parallelGroup struct {
-		depts []string
+	type gatewayGroup struct {
+		isExclusive bool
+		depts       []string
 	}
-	var groups []parallelGroup
+	var groups []gatewayGroup
 
-	for splitID := range splitGWs {
+	// BFS helper function
+	findGroupDepts := func(splitID string) []string {
 		groupDepts := make(map[string]bool)
-
 		for _, branchStart := range outgoing[splitID] {
 			visited := make(map[string]bool)
 			queue := []string{branchStart}
@@ -290,7 +307,6 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 				}
 				visited[cur] = true
 
-				// Stop traversal at the join gateway
 				if joinGWs[cur] {
 					continue
 				}
@@ -306,16 +322,25 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 				}
 			}
 		}
-
-		if len(groupDepts) >= 2 {
-			var depts []string
-			for d := range groupDepts {
-				depts = append(depts, d)
-			}
-			groups = append(groups, parallelGroup{depts: depts})
+		var depts []string
+		for d := range groupDepts {
+			depts = append(depts, d)
 		}
+		return depts
 	}
 
+	for splitID := range splitGWs {
+		depts := findGroupDepts(splitID)
+		if len(depts) >= 2 {
+			groups = append(groups, gatewayGroup{isExclusive: false, depts: depts})
+		}
+	}
+	for splitID := range excSplitGWs {
+		depts := findGroupDepts(splitID)
+		if len(depts) >= 2 {
+			groups = append(groups, gatewayGroup{isExclusive: true, depts: depts})
+		}
+	}
 	if len(groups) == 0 {
 		return dsl.ExecutionPlan{
 			Steps: []dsl.ExecutionStep{{Sequential: deptOrder}},
@@ -363,7 +388,12 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 				orderedPar = append(orderedPar, d)
 			}
 		}
-		steps = append(steps, dsl.ExecutionStep{Parallel: orderedPar})
+		
+		if groups[gIdx].isExclusive {
+			steps = append(steps, dsl.ExecutionStep{Exclusive: orderedPar})
+		} else {
+			steps = append(steps, dsl.ExecutionStep{Parallel: orderedPar})
+		}
 		emittedGroups[gIdx] = true
 	}
 

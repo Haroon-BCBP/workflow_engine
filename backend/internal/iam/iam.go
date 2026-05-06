@@ -21,16 +21,16 @@ func Load(path string) (*IAM, error) {
 }
 
 // role is one of: "preparer", "reviewer", "approver".
-func (i *IAM) GetAssignee(deptID, role string) (*User, error) {
+func (i *IAM) GetAssignees(deptID, role string) ([]User, error) {
 	dept, ok := i.cfg.Departments[deptID]
 	if !ok {
 		return nil, fmt.Errorf("iam: unknown department %q", deptID)
 	}
-	user, ok := dept[role]
+	users, ok := dept[role]
 	if !ok {
 		return nil, fmt.Errorf("iam: unknown role %q in department %q", role, deptID)
 	}
-	return &user, nil
+	return users, nil
 }
 
 func (i *IAM) GetAdmins() []User {
@@ -46,6 +46,6 @@ func (i *IAM) IsAdmin(userID string) bool {
 	return false
 }
 
-func (i *IAM) AllDeptRoles() map[string]map[string]User {
+func (i *IAM) AllDeptRoles() map[string]map[string][]User {
 	return i.cfg.Departments
 }

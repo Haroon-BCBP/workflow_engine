@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_0zxgm88" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="17.7.1" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" modeler:executionPlatform="Camunda Platform" modeler:executionPlatformVersion="7.24.0">
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_1" name="XOR Documents Workflow" processRef="Process_1" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1">
+      <bpmn:lane id="Lane_design" name="Design">
+        <bpmn:flowNodeRef>StartEvent_1</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_design</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_xor_split</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_planning" name="Planning">
+        <bpmn:flowNodeRef>Task_planning</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_construction" name="Construction">
+        <bpmn:flowNodeRef>Task_construction</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_qa" name="QA">
+        <bpmn:flowNodeRef>Gateway_xor_join</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_qa</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_1</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>Flow_start</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <bpmn:userTask id="Task_design" name="Review Design">
+      <bpmn:incoming>Flow_start</bpmn:incoming>
+      <bpmn:outgoing>Flow_to_split</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:exclusiveGateway id="Gateway_xor_split" name="Choose Path">
+      <bpmn:incoming>Flow_to_split</bpmn:incoming>
+      <bpmn:outgoing>Flow_to_planning</bpmn:outgoing>
+      <bpmn:outgoing>Flow_to_construction</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <bpmn:userTask id="Task_planning" name="Review Planning">
+      <bpmn:incoming>Flow_to_planning</bpmn:incoming>
+      <bpmn:outgoing>Flow_from_planning</bpmn:outgoing>
+    </bpmn:userTask>
+    
+    <bpmn:userTask id="Task_construction" name="Review Construction">
+      <bpmn:incoming>Flow_to_construction</bpmn:incoming>
+      <bpmn:outgoing>Flow_from_construction</bpmn:outgoing>
+    </bpmn:userTask>
+    
+    <bpmn:exclusiveGateway id="Gateway_xor_join">
+      <bpmn:incoming>Flow_from_planning</bpmn:incoming>
+      <bpmn:incoming>Flow_from_construction</bpmn:incoming>
+      <bpmn:outgoing>Flow_to_qa</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <bpmn:userTask id="Task_qa" name="Review QA">
+      <bpmn:incoming>Flow_to_qa</bpmn:incoming>
+      <bpmn:outgoing>Flow_to_end</bpmn:outgoing>
+    </bpmn:userTask>
+    
+    <bpmn:endEvent id="EndEvent_1">
+      <bpmn:incoming>Flow_to_end</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <bpmn:sequenceFlow id="Flow_start" sourceRef="StartEvent_1" targetRef="Task_design" />
+    <bpmn:sequenceFlow id="Flow_to_split" sourceRef="Task_design" targetRef="Gateway_xor_split" />
+    <bpmn:sequenceFlow id="Flow_to_planning" sourceRef="Gateway_xor_split" targetRef="Task_planning" />
+    <bpmn:sequenceFlow id="Flow_to_construction" sourceRef="Gateway_xor_split" targetRef="Task_construction" />
+    <bpmn:sequenceFlow id="Flow_from_planning" sourceRef="Task_planning" targetRef="Gateway_xor_join" />
+    <bpmn:sequenceFlow id="Flow_from_construction" sourceRef="Task_construction" targetRef="Gateway_xor_join" />
+    <bpmn:sequenceFlow id="Flow_to_qa" sourceRef="Gateway_xor_join" targetRef="Task_qa" />
+    <bpmn:sequenceFlow id="Flow_to_end" sourceRef="Task_qa" targetRef="EndEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1">
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

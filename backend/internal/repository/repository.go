@@ -19,6 +19,16 @@ type WorkflowRun struct {
 	CreatedAt  time.Time `json:"created_at"`
 }
 
+type Document struct {
+	ID         string    `json:"id"`
+	WorkflowID string    `json:"workflow_id"`
+	DeptID     string    `json:"dept_id"`
+	Stage      string    `json:"stage"`
+	Filename   string    `json:"filename"`
+	UserID     string    `json:"user_id"`
+	CreatedAt  time.Time `json:"created_at"`
+}
+
 type Repository struct {
 	db *sql.DB
 }
@@ -45,6 +55,16 @@ func (r *Repository) migrate() error {
 			temporal_id TEXT NOT NULL,
 			run_id      TEXT NOT NULL,
 			created_at  DATETIME NOT NULL
+		);
+		CREATE TABLE IF NOT EXISTS documents (
+			id          TEXT PRIMARY KEY,
+			workflow_id TEXT NOT NULL,
+			dept_id     TEXT NOT NULL,
+			stage       TEXT NOT NULL,
+			filename    TEXT NOT NULL,
+			user_id     TEXT NOT NULL,
+			created_at  DATETIME NOT NULL,
+			FOREIGN KEY(workflow_id) REFERENCES workflow_runs(id) ON DELETE CASCADE
 		);
 	`)
 	return err
@@ -90,4 +110,42 @@ func (r *Repository) List(ctx context.Context) ([]WorkflowRun, error) {
 		runs = append(runs, run)
 	}
 	return runs, rows.Err()
+}
+
+func (r *Repository) SaveDocument(ctx context.Context, doc Document) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO documents (id, workflow_id, dept_id, stage, filename, user_id, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		doc.ID, doc.WorkflowID, doc.DeptID, doc.Stage, doc.Filename, doc.UserID, doc.CreatedAt,
+	)
+	return err
+}
+
+func (r *Repository) GetDocuments(ctx context.Context, workflowID, deptID, stage string) ([]Document, error) {
+	query := `SELECT id, workflow_id, dept_id, stage, filename, user_id, created_at FROM documents WHERE workflow_id = ?`
+	args := []any{workflowID}
+	if deptID != "" {
+		query += ` AND dept_id = ?`
+		args = append(args, deptID)
+	}
+	if stage != "" {
+		query += ` AND stage = ?`
+		args = append(args, stage)
+	}
+	query += ` ORDER BY created_at ASC`
+
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var docs []Document
+	for rows.Next() {
+		var doc Document
+		if err := rows.Scan(&doc.ID, &doc.WorkflowID, &doc.DeptID, &doc.Stage, &doc.Filename, &doc.UserID, &doc.CreatedAt); err != nil {
+			return nil, err
+		}
+		docs = append(docs, doc)
+	}
+	return docs, rows.Err()
 }

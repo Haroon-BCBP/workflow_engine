@@ -58,4 +58,30 @@ export const api = {
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
+
+  getUsers: async () => {
+    const res = await fetch(`${API_BASE}/api/v1/users`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  uploadDocument: async (id: string, deptId: string, stage: string, filename: string, userId: string) => {
+    const res = await fetch(`${API_BASE}/api/v1/workflows/${id}/documents`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dept_id: deptId, stage, filename, user_id: userId }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  getDocuments: async (workflowId: string, deptId?: string, stage?: string) => {
+    const params = new URLSearchParams();
+    if (deptId) params.append("dept_id", deptId);
+    if (stage) params.append("stage", stage);
+    const qs = params.toString() ? `?${params.toString()}` : "";
+    const res = await fetch(`${API_BASE}/api/v1/workflows/${workflowId}/documents${qs}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
 };

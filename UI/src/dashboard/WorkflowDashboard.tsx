@@ -14,6 +14,15 @@ interface Comment {
   stage: string;
 }
 
+interface Document {
+  id: string;
+  filename: string;
+  user_id: string;
+  dept_id: string;
+  stage: string;
+  created_at: string;
+}
+
 interface DepartmentProgress {
   dept_id: string;
   label: string;
@@ -34,6 +43,7 @@ interface WorkflowState {
     steps: Array<{
       sequential?: string[];
       parallel?: string[];
+      exclusive?: string[];
     }>;
   };
   status: string;
@@ -51,8 +61,13 @@ const STATUS_NEXT: Record<string, string> = {
   review: "approve",
 };
 
-const CURRENT_USER = { id: "u-d2", name: "Bob Malik", isAdmin: false };
-const ADMIN_USER = { id: "admin-1", name: "Admin User", isAdmin: true };
+interface User {
+  id: string;
+  name: string;
+  isAdmin: boolean;
+  dept?: string;
+  role?: string;
+}
 
 interface Props {
   initialWorkflowId: string | null;
@@ -72,6 +87,41 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   const [adminGotoStage, setAdminGotoStage] = useState("prep");
   const [toast, setToast] = useState<string | null>(null);
   const [showYaml, setShowYaml] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [deptDocs, setDeptDocs] = useState<Record<string, Document[]>>({});
+  const [viewDoc, setViewDoc] = useState<Document | null>(null);
+
+  const loadUsers = useCallback(async () => {
+    try {
+      const data = await api.getUsers();
+      const flat: User[] = [];
+      data.admins?.forEach((u: any) =>
+        flat.push({ id: u.user_id, name: u.name, isAdmin: true }),
+      );
+      Object.entries(data.departments || {}).forEach(([dept, roles]: any) => {
+        Object.entries(roles).forEach(([role, rUsers]: any) => {
+          rUsers.forEach((u: any) => {
+            flat.push({
+              id: u.user_id,
+              name: `${u.name} (${dept} ${role})`,
+              isAdmin: false,
+              dept,
+              role,
+            });
+          });
+        });
+      });
+      setUsers(flat);
+      if (flat.length > 0) setCurrentUser(flat[0]);
+    } catch (e: any) {
+      showToast("Error loading users: " + e.message);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
 
   const loadRuns = useCallback(async () => {
     try {
@@ -84,6 +134,15 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
     try {
       const data = await api.getStatus(id);
       setState(data);
+      if (data.progress) {
+        const docsMap: Record<string, Document[]> = {};
+        const allDocs = await api.getDocuments(id);
+        allDocs.forEach((d: Document) => {
+          if (!docsMap[d.dept_id]) docsMap[d.dept_id] = [];
+          docsMap[d.dept_id].push(d);
+        });
+        setDeptDocs(docsMap);
+      }
     } catch (e: any) {
       showToast("Error loading status: " + e.message);
     }
@@ -119,10 +178,10 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   };
 
   const handleTransition = async (deptId: string, toStage: string) => {
-    if (!selectedId) return;
+    if (!selectedId || !currentUser) return;
     setActionLoading(`${deptId}-${toStage}`);
     try {
-      await api.transition(selectedId, deptId, toStage, CURRENT_USER.id);
+      await api.transition(selectedId, deptId, toStage, currentUser.id);
       showToast(`Transitioned ${deptId} → ${toStage}`);
       await loadStatus(selectedId);
     } catch (e: any) {
@@ -133,10 +192,10 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   };
 
   const handleReject = async (deptId: string) => {
-    if (!selectedId) return;
+    if (!selectedId || !currentUser) return;
     setActionLoading(`${deptId}-reject`);
     try {
-      await api.transition(selectedId, deptId, "reject", CURRENT_USER.id);
+      await api.transition(selectedId, deptId, "reject", currentUser.id);
       showToast(`Rejected: ${deptId}`);
       await loadStatus(selectedId);
     } catch (e: any) {
@@ -147,7 +206,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   };
 
   const handleComment = async (deptId: string, stage: string) => {
-    if (!selectedId) return;
+    if (!selectedId || !currentUser) return;
     const text = commentText[deptId]?.trim();
     if (!text) {
       showToast("Comment cannot be empty");
@@ -155,7 +214,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
     }
     setActionLoading(`${deptId}-comment`);
     try {
-      await api.comment(selectedId, deptId, stage, CURRENT_USER.id, text);
+      await api.comment(selectedId, deptId, stage, currentUser.id, text);
       setCommentText((prev) => ({ ...prev, [deptId]: "" }));
       showToast("Comment added");
       await loadStatus(selectedId);
@@ -166,15 +225,37 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
     }
   };
 
+  const handleUploadDocument = async (deptId: string, stage: string) => {
+    if (!selectedId || !currentUser) return;
+    const filename = prompt("Enter mock document filename:", "document_v1.pdf");
+    if (!filename) return;
+    setActionLoading(`${deptId}-upload`);
+    try {
+      await api.uploadDocument(
+        selectedId,
+        deptId,
+        stage,
+        filename,
+        currentUser.id,
+      );
+      showToast("Document uploaded");
+      await loadStatus(selectedId);
+    } catch (e: any) {
+      showToast("Error: " + e.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleAdminRoute = async (action: string) => {
-    if (!selectedId) return;
+    if (!selectedId || !currentUser?.isAdmin) return;
     try {
       await api.adminRoute(
         selectedId,
         action,
         adminGotoDept,
         adminGotoStage,
-        ADMIN_USER.id,
+        currentUser.id,
       );
       showToast(
         action === "terminate"
@@ -231,6 +312,18 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
     return ordered;
   }, [state]);
 
+  const hasPermission = (deptId: string, stage: string) => {
+    if (currentUser?.isAdmin) return true;
+    if (!currentUser?.dept) return false;
+    if (currentUser.dept !== deptId) return false;
+    const roleMap: Record<string, string> = {
+      prep: "preparer",
+      review: "reviewer",
+      approve: "approver",
+    };
+    return currentUser.role === roleMap[stage];
+  };
+
   return (
     <div className="dashboard">
       {toast && (
@@ -246,6 +339,30 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
           <button className="btn-ghost" onClick={loadRuns} title="Refresh">
             ↻
           </button>
+        </div>
+        <div className="user-switcher" style={{ padding: "0 1rem 1rem" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "0.8rem",
+              marginBottom: "4px",
+            }}
+          >
+            Logged in as:
+          </label>
+          <select
+            value={currentUser?.id || ""}
+            onChange={(e) =>
+              setCurrentUser(users.find((u) => u.id === e.target.value) || null)
+            }
+            style={{ width: "100%", padding: "4px" }}
+          >
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
         </div>
         {runs.length === 0 && (
           <p className="sidebar-empty">
@@ -312,6 +429,20 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                     Admin: Route Rejection
                   </button>
                 )}
+                {state.status === "paused_xor" && currentUser?.isAdmin && (
+                  <button
+                    className="btn-admin"
+                    onClick={() =>
+                      setAdminGotoDept(
+                        state.execution.steps[state.current_step]
+                          ?.exclusive?.[0] || "",
+                      )
+                    }
+                    id="btn-admin-xor"
+                  >
+                    Admin: Select Path
+                  </button>
+                )}
               </div>
             </div>
 
@@ -331,7 +462,10 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                 let advanceButtonLabel = "→ Send for Approval";
                 if (dept.current_stage === "prep") {
                   advanceButtonLabel = "→ Send for Review";
-                } else if (dept.current_stage === "review" && dept.has_comment) {
+                } else if (
+                  dept.current_stage === "review" &&
+                  dept.has_comment
+                ) {
                   advanceButtonLabel = "→ Return to Prep (Address Comments)";
                 }
 
@@ -426,62 +560,160 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                             </ul>
                           )}
 
-                          <div className="transition-buttons">
-                            {dept.current_stage !== "approve" &&
-                              STATUS_NEXT[dept.current_stage] && (
+                          {hasPermission(dept.dept_id, dept.current_stage) && (
+                            <div className="transition-buttons">
+                              {dept.current_stage !== "approve" &&
+                                STATUS_NEXT[dept.current_stage] && (
+                                  <button
+                                    className="btn-sm btn-primary"
+                                    onClick={() =>
+                                      handleTransition(
+                                        dept.dept_id,
+                                        STATUS_NEXT[dept.current_stage],
+                                      )
+                                    }
+                                    disabled={!!actionLoading}
+                                    id={`btn-advance-${dept.dept_id}`}
+                                  >
+                                    {advanceButtonLabel}
+                                  </button>
+                                )}
+                              {dept.current_stage === "approve" && (
                                 <button
-                                  className="btn-sm btn-primary"
+                                  className="btn-sm btn-success"
                                   onClick={() =>
                                     handleTransition(
                                       dept.dept_id,
-                                      STATUS_NEXT[dept.current_stage],
+                                      dept.current_stage,
                                     )
                                   }
-                                  disabled={!!actionLoading}
-                                  id={`btn-advance-${dept.dept_id}`}
+                                  disabled={
+                                    !!actionLoading ||
+                                    (dept.current_stage === "approve" &&
+                                      !dept.has_comment)
+                                  }
+                                  id={`btn-approve-${dept.dept_id}`}
+                                  title={
+                                    dept.current_stage === "approve" &&
+                                    !dept.has_comment
+                                      ? "Add a comment before approving"
+                                      : ""
+                                  }
                                 >
-                                  {advanceButtonLabel}
+                                  ✓{" "}
+                                  {dept.current_stage === "approve"
+                                    ? "Approve"
+                                    : "Complete"}
                                 </button>
                               )}
-                            {dept.current_stage === "approve" && (
                               <button
-                                className="btn-sm btn-success"
-                                onClick={() =>
-                                  handleTransition(
-                                    dept.dept_id,
-                                    dept.current_stage,
-                                  )
-                                }
-                                disabled={
-                                  !!actionLoading ||
-                                  (dept.current_stage === "approve" &&
-                                    !dept.has_comment)
-                                }
-                                id={`btn-approve-${dept.dept_id}`}
-                                title={
-                                  dept.current_stage === "approve" &&
-                                  !dept.has_comment
-                                    ? "Add a comment before approving"
-                                    : ""
-                                }
+                                className="btn-sm btn-danger"
+                                onClick={() => handleReject(dept.dept_id)}
+                                disabled={!!actionLoading}
+                                id={`btn-reject-${dept.dept_id}`}
                               >
-                                ✓{" "}
-                                {dept.current_stage === "approve"
-                                  ? "Approve"
-                                  : "Complete"}
+                                ✕ Reject
                               </button>
-                            )}
-                            <button
-                              className="btn-sm btn-danger"
-                              onClick={() => handleReject(dept.dept_id)}
-                              disabled={!!actionLoading}
-                              id={`btn-reject-${dept.dept_id}`}
-                            >
-                              ✕ Reject
-                            </button>
-                          </div>
+                            </div>
+                          )}
                         </div>
                       )}
+
+                    {/* Documents Section */}
+                    {state.status !== "paused" && (
+                      <div
+                        className="dept-actions"
+                        style={{
+                          marginTop: "1rem",
+                          borderTop: "1px dashed #ccc",
+                          paddingTop: "0.5rem",
+                        }}
+                      >
+                        <h4
+                          style={{
+                            margin: "0 0 0.5rem",
+                            fontSize: "0.85rem",
+                            color: "#666",
+                          }}
+                        >
+                          Stage Documents
+                        </h4>
+                        {deptDocs[dept.dept_id]?.length > 0 ? (
+                          <ul className="comment-list">
+                            {deptDocs[dept.dept_id].map((d) => {
+                              const canOpen =
+                                currentUser?.isAdmin ||
+                                currentUser?.dept === d.dept_id;
+                              return (
+                                <li
+                                  key={d.id}
+                                  className="comment-item"
+                                  style={{
+                                    fontSize: "0.8rem",
+                                    cursor: canOpen ? "pointer" : "not-allowed",
+                                    background: "#f8f9fa",
+                                    border: "1px solid #ddd",
+                                    opacity: canOpen ? 1 : 0.6,
+                                  }}
+                                  onClick={() => {
+                                    if (canOpen) {
+                                      setViewDoc(d);
+                                    } else {
+                                      showToast(
+                                        "You do not have permission to open documents from other departments.",
+                                      );
+                                    }
+                                  }}
+                                >
+                                  <span
+                                    className="comment-user"
+                                    style={{
+                                      color: canOpen ? "#0066cc" : "#666",
+                                      textDecoration: canOpen
+                                        ? "underline"
+                                        : "none",
+                                    }}
+                                  >
+                                    📄 {d.filename}
+                                  </span>
+                                  <span className="comment-text">
+                                    by {d.user_id} ({d.stage})
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p
+                            style={{
+                              fontSize: "0.8rem",
+                              color: "#999",
+                              margin: "0 0 0.5rem",
+                            }}
+                          >
+                            No documents yet.
+                          </p>
+                        )}
+                        {hasPermission(dept.dept_id, dept.current_stage) &&
+                          dept.stage_status === "in_progress" &&
+                          !isRejected && (
+                            <button
+                              className="btn-sm btn-secondary"
+                              onClick={() =>
+                                handleUploadDocument(
+                                  dept.dept_id,
+                                  dept.current_stage,
+                                )
+                              }
+                              disabled={
+                                actionLoading === `${dept.dept_id}-upload`
+                              }
+                            >
+                              + Upload Mock Doc
+                            </button>
+                          )}
+                      </div>
+                    )}
 
                     {isRejected && (
                       <div className="rejected-notice">
@@ -556,6 +788,100 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
               </button>
               <button className="btn-ghost" onClick={() => setShowAdmin(false)}>
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {state?.status === "paused_xor" &&
+        currentUser?.isAdmin &&
+        adminGotoDept !== "" && (
+          <div className="modal-overlay">
+            <button
+              type="button"
+              className="modal-backdrop"
+              onClick={() => setAdminGotoDept("")}
+            />
+            <div className="modal" id="admin-xor-modal">
+              <h3>Admin: Select XOR Path</h3>
+              <p>
+                Workflow is at an Exclusive Gateway. Choose which department
+                path to execute:
+              </p>
+              <label htmlFor="admin-xor-select">Path</label>
+              <select
+                value={adminGotoDept}
+                onChange={(e) => setAdminGotoDept(e.target.value)}
+                id="admin-xor-select"
+              >
+                {(
+                  state.execution.steps[state.current_step]?.exclusive || []
+                ).map((deptId) => (
+                  <option key={deptId} value={deptId}>
+                    {state.progress[deptId]?.label || deptId}
+                  </option>
+                ))}
+              </select>
+              <div className="modal-actions">
+                <button
+                  className="btn-primary"
+                  onClick={async () => {
+                    await handleAdminRoute("xor_route");
+                    setAdminGotoDept("");
+                  }}
+                >
+                  Execute Selected
+                </button>
+                <button
+                  className="btn-ghost"
+                  onClick={() => setAdminGotoDept("")}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {viewDoc && (
+        <div className="modal-overlay">
+          <button
+            type="button"
+            className="modal-backdrop"
+            onClick={() => setViewDoc(null)}
+          />
+          <div className="modal">
+            <h3>Document Viewer: {viewDoc.filename}</h3>
+            <div
+              style={{
+                backgroundColor: "#1e1e1e",
+                color: "#d4d4d4",
+                padding: "1rem",
+                borderRadius: "4px",
+                fontFamily: "monospace",
+                whiteSpace: "pre-wrap",
+                margin: "1rem 0",
+              }}
+            >
+              {JSON.stringify(
+                {
+                  id: viewDoc.id,
+                  title: viewDoc.filename,
+                  author: viewDoc.user_id,
+                  stage: viewDoc.stage,
+                  department: viewDoc.dept_id,
+                  content:
+                    "This is a mock document content for demonstration purposes.",
+                  verified: true,
+                },
+                null,
+                2,
+              )}
+            </div>
+            <div className="modal-actions">
+              <button className="btn-ghost" onClick={() => setViewDoc(null)}>
+                Close
               </button>
             </div>
           </div>
