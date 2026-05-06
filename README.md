@@ -69,7 +69,7 @@ npm run dev
 
 ---
 
-
 ## Issues/ Pending
 
 1. [x] Failures at parallel gateways: Handled by sending to last non parallel workflow, but may need to consider the documents each of them receives to check independence.
+2. [ ] Limit BPMN to only custom modules with Departments and Stages
