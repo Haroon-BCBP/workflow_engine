@@ -81,5 +81,5 @@ npm run dev
 2. [x] Limit BPMN to only custom modules with Departments and Stages
 3. [x] Add document passing and dept assigning in XOR gateways
 4. [X] Users will be injected via UI from IAM, they should go into the workflows and they decide perms
-5. [ ] Only Admin should see whole workflow, users should only see tickets that are assigned to them
+5. [x] Only Admin should see whole workflow, users should only see tickets that are assigned to them
 6. [ ] Cleanup code and dockerise
