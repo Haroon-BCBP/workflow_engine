@@ -12,6 +12,7 @@ import (
 
 	"github.com/Haroon-BCBP/workflow_engine/internal/bpmn"
 	"github.com/Haroon-BCBP/workflow_engine/internal/dsl"
+	"github.com/Haroon-BCBP/workflow_engine/internal/iam"
 	"github.com/Haroon-BCBP/workflow_engine/internal/repository"
 )
 
@@ -30,13 +31,15 @@ type WorkflowService struct {
 	repo           *repository.Repository
 	temporalClient client.Client
 	parser         *bpmn.Parser
+	iam            *iam.IAM
 }
 
-func New(repo *repository.Repository, tc client.Client) *WorkflowService {
+func New(repo *repository.Repository, tc client.Client, i *iam.IAM) *WorkflowService {
 	return &WorkflowService{
 		repo:           repo,
 		temporalClient: tc,
 		parser:         &bpmn.Parser{},
+		iam:            i,
 	}
 }
 
@@ -154,9 +157,11 @@ func (s *WorkflowService) GetWorkloads(ctx context.Context) (map[string]int, err
 			if state.Status == dsl.WorkflowRunning || state.Status == dsl.WorkflowPaused {
 				for _, progress := range state.Progress {
 					if progress.StageStatus == dsl.StageStatusInProgress || progress.StageStatus == dsl.StageStatusPending {
-						for _, assigneeID := range progress.StageAssignees {
-							if assigneeID != "" {
-								w[assigneeID]++
+						for _, assignees := range progress.StageAssignees {
+							for _, assigneeID := range assignees {
+								if assigneeID != "" {
+									w[assigneeID]++
+								}
 							}
 						}
 					}
@@ -204,9 +209,16 @@ func (s *WorkflowService) ListRuns(ctx context.Context, userID string, isAdmin b
 
 			isAssigned := isAdmin || userID == ""
 			if !isAssigned && err == nil {
+				userDepts := s.iam.GetUserDepartments(userID)
 				for _, dept := range state.Progress {
-					if dept.StageAssignees[dept.CurrentStage] == userID {
-						isAssigned = true
+					// Check if user belongs to this department
+					for _, d := range userDepts {
+						if d == dept.DeptID {
+							isAssigned = true
+							break
+						}
+					}
+					if isAssigned {
 						break
 					}
 				}

@@ -65,8 +65,8 @@ type DepartmentProgress struct {
 	Label              string                `json:"label"`
 	CurrentStage       StageType             `json:"current_stage"`
 	StageStatus        StageStatus           `json:"stage_status"`
-	StageAssignees     map[StageType]string  `json:"stage_assignees"`
-	StageAssigneeNames map[StageType]string  `json:"stage_assignee_names"`
+	StageAssignees     map[StageType][]string `json:"stage_assignees"`
+	StageAssigneeNames map[StageType][]string `json:"stage_assignee_names"`
 	HasComment         bool                  `json:"has_comment"`
 	Comments           []Comment             `json:"comments"`
 }
@@ -117,8 +117,8 @@ type Assignment struct {
 }
 
 type AdminStartSignal struct {
-	Assignments map[string]map[StageType]Assignment `json:"assignments"` // deptID -> stage -> Assignment
-	AdminID     string                              `json:"admin_id"`
+	Assignments map[string]map[StageType][]Assignment `json:"assignments"` // deptID -> stage -> []Assignment
+	AdminID     string                                `json:"admin_id"`
 }
 
 const (

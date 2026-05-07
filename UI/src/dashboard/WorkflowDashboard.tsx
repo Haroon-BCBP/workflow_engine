@@ -29,8 +29,8 @@ interface DepartmentProgress {
   label: string;
   current_stage: string;
   stage_status: string;
-  stage_assignees: Record<string, string>;
-  stage_assignee_names: Record<string, string>;
+  stage_assignees: Record<string, string[]>;
+  stage_assignee_names: Record<string, string[]>;
   has_comment: boolean;
   comments: Comment[];
 }
@@ -97,8 +97,18 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   const [activeTab, setActiveTab] = useState<"all" | "admin">("all");
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignments, setAssignments] = useState<
-    Record<string, Record<string, { user_id: string; user_name: string }>>
+    Record<string, Record<string, Array<{ user_id: string; user_name: string }>>>
   >({});
+
+  const userDepts = useMemo(() => {
+    if (!currentUser) return [];
+    // Admins see all depts
+    if (currentUser.isAdmin) return [];
+    return users
+      .filter((u) => u.id === currentUser.id)
+      .map((u) => u.dept)
+      .filter(Boolean);
+  }, [currentUser, users]);
 
   const loadWorkloads = useCallback(async () => {
     try {
@@ -338,8 +348,8 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   const hasPermission = (deptId: string, stage: string) => {
     if (currentUser?.isAdmin) return true;
     if (!state?.progress[deptId]) return false;
-    const assignee = state.progress[deptId].stage_assignees?.[stage];
-    return currentUser?.id === assignee;
+    const assignees = state.progress[deptId].stage_assignees?.[stage] || [];
+    return !!currentUser?.id && assignees.includes(currentUser.id);
   };
 
   const filteredRuns = runs.filter((r) => {
@@ -359,10 +369,10 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   };
 
   const handleOpenAssignModal = () => {
-    // Build auto-assignments based on workloads
+    loadWorkloads();
     const initial: Record<
       string,
-      Record<string, { user_id: string; user_name: string }>
+      Record<string, Array<{ user_id: string; user_name: string }>>
     > = {};
     deptList.forEach((dept) => {
       initial[dept.dept_id] = {};
@@ -372,10 +382,14 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
           const sorted = [...avail].sort(
             (a, b) => (workloads[a.id] || 0) - (workloads[b.id] || 0),
           );
-          initial[dept.dept_id][stage] = {
-            user_id: sorted[0].id,
-            user_name: sorted[0].name,
-          };
+          initial[dept.dept_id][stage] = [
+            {
+              user_id: sorted[0].id,
+              user_name: sorted[0].name,
+            },
+          ];
+        } else {
+          initial[dept.dept_id][stage] = [];
         }
       });
     });
@@ -420,7 +434,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
       {/* Sidebar — workflow list */}
       <aside className="dashboard-sidebar">
         <div className="sidebar-header">
-          <h2>Workflows</h2>
+          <h2>{currentUser?.isAdmin ? "Workflows" : "My Tasks"}</h2>
           <button className="btn-ghost" onClick={loadRuns} title="Refresh">
             ↻
           </button>
@@ -597,6 +611,10 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
 
             <div className="dept-grid">
               {deptList.map((dept, idx) => {
+                // If not admin, only show user's departments
+                if (!currentUser?.isAdmin && !userDepts.includes(dept.dept_id)) {
+                  return null;
+                }
                 const isCurrent =
                   state.status === "running" &&
                   (dept.stage_status === "in_progress" ||
@@ -629,9 +647,9 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                         <h3 className="dept-label">
                           {dept.label || dept.dept_id}
                         </h3>
-                        {dept.stage_assignee_names?.[dept.current_stage] && (
+                        {dept.stage_assignee_names?.[dept.current_stage]?.length > 0 && (
                           <span className="dept-assignee">
-                            👤 {dept.stage_assignee_names[dept.current_stage]}
+                            👤 {dept.stage_assignee_names[dept.current_stage].join(", ")}
                           </span>
                         )}
                       </div>
@@ -792,7 +810,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                             {deptDocs[dept.dept_id].map((d) => {
                               const canOpen =
                                 currentUser?.isAdmin ||
-                                currentUser?.dept === d.dept_id;
+                                userDepts.includes(d.dept_id);
                               return (
                                 <li
                                   key={d.id}
@@ -1108,8 +1126,6 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                   </h4>
                   {STAGE_ORDER.map((stage) => {
                     const avail = getAvailableUsers(dept.dept_id, stage);
-                    const currentAssign =
-                      assignments[dept.dept_id]?.[stage]?.user_id || "";
                     return (
                       <div
                         key={stage}
@@ -1123,44 +1139,54 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                           style={{
                             fontSize: "0.85rem",
                             fontWeight: "bold",
-                            marginBottom: "0.3rem",
+                            marginBottom: "0.5rem",
                           }}
                         >
                           {STAGE_LABELS[stage]} ({avail.length} available)
                         </label>
-                        <select
-                          value={currentAssign}
-                          onChange={(e) => {
-                            const selectedUser = avail.find(
-                              (u) => u.id === e.target.value,
+                        <div className="multi-assign-list">
+                          {avail.map((user) => {
+                            const isChecked = (
+                              assignments[dept.dept_id]?.[stage] || []
+                            ).some((a) => a.user_id === user.id);
+                            return (
+                              <label key={user.id} className="assignee-checkbox">
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    const current =
+                                      assignments[dept.dept_id]?.[stage] || [];
+                                    let next;
+                                    if (e.target.checked) {
+                                      next = [
+                                        ...current,
+                                        { user_id: user.id, user_name: user.name },
+                                      ];
+                                    } else {
+                                      next = current.filter(
+                                        (a) => a.user_id !== user.id,
+                                      );
+                                    }
+                                    setAssignments((prev) => ({
+                                      ...prev,
+                                      [dept.dept_id]: {
+                                        ...prev[dept.dept_id],
+                                        [stage]: next,
+                                      },
+                                    }));
+                                  }}
+                                />
+                                <span className="user-name-cell">
+                                  {user.name}
+                                  <span className="workload-count">
+                                    {workloads[user.id] || 0} tasks active
+                                  </span>
+                                </span>
+                              </label>
                             );
-                            if (selectedUser) {
-                              setAssignments((prev) => ({
-                                ...prev,
-                                [dept.dept_id]: {
-                                  ...prev[dept.dept_id],
-                                  [stage]: {
-                                    user_id: selectedUser.id,
-                                    user_name: selectedUser.name,
-                                  },
-                                },
-                              }));
-                            }
-                          }}
-                          style={{ padding: "0.5rem" }}
-                        >
-                          {avail.map((u) => (
-                            <option key={u.id} value={u.id}>
-                              {u.name.replace(/\s\(.*\)/, "")} (Workload:{" "}
-                              {workloads[u.id] || 0})
-                            </option>
-                          ))}
-                          {avail.length === 0 && (
-                            <option value="" disabled>
-                              No users match role
-                            </option>
-                          )}
-                        </select>
+                          })}
+                        </div>
                       </div>
                     );
                   })}

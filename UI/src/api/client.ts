@@ -73,7 +73,7 @@ export const api = {
     return res.json();
   },
 
-  startWorkflow: async (id: string, assignments: Record<string, Record<string, { user_id: string; user_name: string }>>, adminId: string) => {
+  startWorkflow: async (id: string, assignments: Record<string, Record<string, Array<{ user_id: string; user_name: string }>>>, adminId: string) => {
     const res = await fetch(`${API_BASE}/api/v1/workflows/${id}/start`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

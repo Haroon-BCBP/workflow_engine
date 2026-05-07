@@ -245,3 +245,45 @@
   font-weight: 600;
   color: var(--success);
 }
+
+.multi-assign-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-surface);
+  padding: 10px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.assignee-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.assignee-checkbox:hover {
+  background: var(--bg-card);
+}
+
+.user-name-cell {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 13px;
+  color: var(--text-1);
+}
+
+.workload-count {
+  font-size: 10px;
+  color: var(--text-3);
+  background: var(--bg-input);
+  padding: 2px 6px;
+  border-radius: 4px;
+}

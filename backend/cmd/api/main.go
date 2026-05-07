@@ -32,13 +32,13 @@ func main() {
 		log.Fatalf("Failed to open DB: %v", err)
 	}
 
-	svc := service.New(repo, tc)
-
 	iamPath := getEnv("IAM_PATH", "config/iam.yaml")
 	iamSvc, err := iam.Load(iamPath)
 	if err != nil {
 		log.Fatalf("Failed to load IAM config: %v", err)
 	}
+
+	svc := service.New(repo, tc, iamSvc)
 
 	h := handler.New(svc, iamSvc)
 

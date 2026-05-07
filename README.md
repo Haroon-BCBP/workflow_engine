@@ -78,7 +78,7 @@ npm run dev
 ## Issues/ Pending
 
 1. [x] Failures at parallel gateways: Handled by sending to last non parallel workflow,the documents each are assumed independence.
-2. [ ] Limit BPMN to only custom modules with Departments and Stages
+2. [x] Limit BPMN to only custom modules with Departments and Stages
 3. [x] Add document passing and dept assigning in XOR gateways
 4. [X] Users will be injected via UI from IAM, they should go into the workflows and they decide perms
 5. [ ] Only Admin should see whole workflow, users should only see tickets that are assigned to them

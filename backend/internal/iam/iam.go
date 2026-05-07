@@ -49,3 +49,22 @@ func (i *IAM) IsAdmin(userID string) bool {
 func (i *IAM) AllDeptRoles() map[string]map[string][]User {
 	return i.cfg.Departments
 }
+func (i *IAM) GetUserDepartments(userID string) []string {
+	var depts []string
+	for deptID, roles := range i.cfg.Departments {
+		found := false
+		for _, users := range roles {
+			for _, u := range users {
+				if u.UserID == userID {
+					depts = append(depts, deptID)
+					found = true
+					break
+				}
+			}
+			if found {
+				break
+			}
+		}
+	}
+	return depts
+}

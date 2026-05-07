@@ -134,8 +134,15 @@ func (h *Handler) Transition(w http.ResponseWriter, r *http.Request) {
 	state, err := h.svc.GetStatus(r.Context(), id)
 	if err == nil {
 		if dept, ok := state.Progress[sig.DeptID]; ok {
-			assignee := dept.StageAssignees[dept.CurrentStage]
-			if assignee != sig.UserID && !h.iam.IsAdmin(sig.UserID) {
+			assignees := dept.StageAssignees[dept.CurrentStage]
+			isAssigned := false
+			for _, a := range assignees {
+				if a == sig.UserID {
+					isAssigned = true
+					break
+				}
+			}
+			if !isAssigned && !h.iam.IsAdmin(sig.UserID) {
 				writeError(w, http.StatusForbidden, "User is not assigned to this stage")
 				return
 			}
@@ -161,8 +168,15 @@ func (h *Handler) Comment(w http.ResponseWriter, r *http.Request) {
 	state, err := h.svc.GetStatus(r.Context(), id)
 	if err == nil {
 		if dept, ok := state.Progress[sig.DeptID]; ok {
-			assignee := dept.StageAssignees[dept.CurrentStage]
-			if assignee != sig.UserID && !h.iam.IsAdmin(sig.UserID) {
+			assignees := dept.StageAssignees[dept.CurrentStage]
+			isAssigned := false
+			for _, a := range assignees {
+				if a == sig.UserID {
+					isAssigned = true
+					break
+				}
+			}
+			if !isAssigned && !h.iam.IsAdmin(sig.UserID) {
 				writeError(w, http.StatusForbidden, "User is not assigned to this stage")
 				return
 			}

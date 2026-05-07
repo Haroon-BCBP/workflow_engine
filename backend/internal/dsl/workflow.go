@@ -26,8 +26,8 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 			Label:              d.Label,
 			CurrentStage:       StagePrep,
 			StageStatus:        StageStatusPending,
-			StageAssignees:     make(map[StageType]string),
-			StageAssigneeNames: make(map[StageType]string),
+			StageAssignees:     make(map[StageType][]string),
+			StageAssigneeNames: make(map[StageType][]string),
 		}
 	}
 
@@ -93,9 +93,11 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 	logger.Info("Admin assigned identities and started workflow", "admin", startSig.AdminID)
 	for deptID, stageAssignments := range startSig.Assignments {
 		if progress, ok := state.Progress[deptID]; ok {
-			for stage, assignment := range stageAssignments {
-				progress.StageAssignees[stage] = assignment.UserID
-				progress.StageAssigneeNames[stage] = assignment.UserName
+			for stage, assignments := range stageAssignments {
+				for _, assignment := range assignments {
+					progress.StageAssignees[stage] = append(progress.StageAssignees[stage], assignment.UserID)
+					progress.StageAssigneeNames[stage] = append(progress.StageAssigneeNames[stage], assignment.UserName)
+				}
 			}
 		}
 	}
