@@ -11,8 +11,9 @@ export const api = {
     return res.json();
   },
 
-  listWorkflows: async () => {
-    const res = await fetch(`${API_BASE}/api/v1/workflows`);
+  listWorkflows: async (userId?: string) => {
+    const qs = userId ? `?user_id=${userId}` : "";
+    const res = await fetch(`${API_BASE}/api/v1/workflows${qs}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },
@@ -65,8 +66,9 @@ export const api = {
     return res.json();
   },
 
-  getWorkloads: async () => {
-    const res = await fetch(`${API_BASE}/api/v1/workloads`);
+  getWorkloads: async (userId?: string) => {
+    const qs = userId ? `?user_id=${userId}` : "";
+    const res = await fetch(`${API_BASE}/api/v1/workloads${qs}`);
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   },

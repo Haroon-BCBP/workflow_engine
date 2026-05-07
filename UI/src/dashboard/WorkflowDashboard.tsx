@@ -6,7 +6,7 @@ interface WorkflowRun {
   id: string;
   name: string;
   created_at: string;
-  status?: string;
+  status: string;
 }
 
 interface Comment {
@@ -102,12 +102,12 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
 
   const loadWorkloads = useCallback(async () => {
     try {
-      const w = await api.getWorkloads();
+      const w = await api.getWorkloads(currentUser?.id);
       setWorkloads(w || {});
     } catch (e: any) {
       console.error("Failed to load workloads", e);
     }
-  }, []);
+  }, [currentUser?.id]);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -142,20 +142,10 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
 
   const loadRuns = useCallback(async () => {
     try {
-      const data = await api.listWorkflows();
-      const runsWithStatus = await Promise.all(
-        (data ?? []).map(async (r: WorkflowRun) => {
-          try {
-            const st = await api.getStatus(r.id);
-            return { ...r, status: st.status };
-          } catch {
-            return r;
-          }
-        }),
-      );
-      setRuns(runsWithStatus);
+      const data = await api.listWorkflows(currentUser?.id);
+      setRuns(data ?? []);
     } catch {}
-  }, []);
+  }, [currentUser?.id]);
 
   const loadStatus = useCallback(async (id: string) => {
     try {
@@ -524,7 +514,12 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                 onClick={() => setSelectedId(run.id)}
                 id={`workflow-item-${run.id}`}
               >
-                <span className="wf-name">{run.name}</span>
+                <div className="wf-item-info">
+                  <span className="wf-name">{run.name}</span>
+                  <span className={`wf-status-pill status-${run.status}`}>
+                    {run.status?.replace("_", " ")}
+                  </span>
+                </div>
                 <span className="wf-date">
                   {new Date(run.created_at).toLocaleDateString()}
                 </span>

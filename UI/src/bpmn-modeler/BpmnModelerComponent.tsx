@@ -14,6 +14,7 @@ import {
   ElementTemplatesPropertiesProviderModule,
 } from "bpmn-js-element-templates";
 import { api } from "../api/client";
+import CustomModule from "./custom-modeler";
 
 import "bpmn-js/dist/assets/diagram-js.css";
 import "bpmn-js/dist/assets/bpmn-js.css";
@@ -60,6 +61,7 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
           ZeebePropertiesProviderModule,
           ElementTemplatesCoreModule,
           ElementTemplatesPropertiesProviderModule,
+          CustomModule,
         ],
         moddleExtensions: { zeebe: zeebeModdleDescriptor },
         keyboard: { bindTo: globalThis },
@@ -187,11 +189,6 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
           {submitting ? "Starting…" : "▶ Start Workflow"}
         </button>
         {statusMsg && <span className="submit-status">{statusMsg}</span>}
-      </div>
-
-      <div className="modeler-hint">
-        💡 <strong>Using templates:</strong> Add a <em>User Task</em> to the canvas → select it → click
-        {" "}<strong>"Select template"</strong> in the right panel to apply the <em>Department Stage Task</em> template.
       </div>
 
       <div className="modeler-body">

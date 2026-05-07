@@ -58,7 +58,9 @@ func (h *Handler) Submit(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListWorkflows(w http.ResponseWriter, r *http.Request) {
-	runs, err := h.svc.ListRuns(r.Context())
+	userID := r.URL.Query().Get("user_id")
+	isAdmin := h.iam.IsAdmin(userID)
+	runs, err := h.svc.ListRuns(r.Context(), userID, isAdmin)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -77,6 +79,11 @@ func (h *Handler) GetStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetWorkloads(w http.ResponseWriter, r *http.Request) {
+	userID := r.URL.Query().Get("user_id")
+	if !h.iam.IsAdmin(userID) {
+		writeError(w, http.StatusForbidden, "Only admins can see workloads")
+		return
+	}
 	workloads, err := h.svc.GetWorkloads(r.Context())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())

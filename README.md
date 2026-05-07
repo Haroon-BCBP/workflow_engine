@@ -82,3 +82,4 @@ npm run dev
 3. [x] Add document passing and dept assigning in XOR gateways
 4. [X] Users will be injected via UI from IAM, they should go into the workflows and they decide perms
 5. [ ] Only Admin should see whole workflow, users should only see tickets that are assigned to them
+6. [ ] Cleanup code and dockerise

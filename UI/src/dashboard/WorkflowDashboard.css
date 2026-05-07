@@ -41,7 +41,30 @@
 }
 .workflow-item:hover { background: var(--bg-card); }
 .workflow-item.selected { background: var(--bg-card); border-color: var(--accent); }
-.wf-name { font-size: 13px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wf-item-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+.wf-name { font-size: 13px; font-weight: 500; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.wf-status-pill {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+.status-pending_assignment { background: #f1f5f9; color: #475569; }
+.status-running { background: #e0eaff; color: #3451b2; }
+.status-approved { background: #dcfce7; color: #15803d; }
+.status-rejected { background: #fee2e2; color: #b91c1c; }
+.status-paused { background: #fef3c7; color: #92400e; }
+.status-paused_xor { background: #f5f3ff; color: #7c3aed; }
+
 .wf-date { font-size: 11px; color: var(--text-3); }
 
 .dashboard-main {

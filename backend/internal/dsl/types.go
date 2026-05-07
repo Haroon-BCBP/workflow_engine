@@ -128,5 +128,5 @@ const (
 	AdminRoutingChannel = "AdminRoutingChannel"
 	AdminStartChannel   = "AdminStartChannel"
 	QueryStatus         = "GetWorkflowStatus"
-	TaskQueue           = "workflow-engine-queue-v2"
+	TaskQueue           = "workflow-queue"
 )

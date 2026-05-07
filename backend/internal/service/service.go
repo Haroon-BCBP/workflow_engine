@@ -21,6 +21,11 @@ type SubmitResult struct {
 	YAML       string `json:"yaml"`
 }
 
+type RunSummary struct {
+	repository.WorkflowRun
+	Status string `json:"status"`
+}
+
 type WorkflowService struct {
 	repo           *repository.Repository
 	temporalClient client.Client
@@ -124,34 +129,107 @@ func (s *WorkflowService) SendAdminStart(ctx context.Context, workflowID string,
 }
 
 func (s *WorkflowService) GetWorkloads(ctx context.Context) (map[string]int, error) {
-	runs, err := s.ListRuns(ctx)
+	runs, err := s.ListRuns(ctx, "", true)
 	if err != nil {
 		return nil, err
 	}
 
-	workloads := make(map[string]int)
+	type result struct {
+		workloads map[string]int
+	}
+	resChan := make(chan result, len(runs))
+
 	for _, run := range runs {
-		state, err := s.GetStatus(ctx, run.ID)
-		if err != nil {
-			continue // Skip errors for individual workflows
-		}
-		if state.Status == dsl.WorkflowRunning || state.Status == dsl.WorkflowPaused {
-			for _, progress := range state.Progress {
-				if progress.StageStatus == dsl.StageStatusInProgress || progress.StageStatus == dsl.StageStatusPending {
-					for _, assigneeID := range progress.StageAssignees {
-						if assigneeID != "" {
-							workloads[assigneeID]++
+		go func(r repository.WorkflowRun) {
+			queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+			defer cancel()
+
+			state, err := s.GetStatus(queryCtx, r.ID)
+			if err != nil {
+				resChan <- result{workloads: nil}
+				return
+			}
+
+			w := make(map[string]int)
+			if state.Status == dsl.WorkflowRunning || state.Status == dsl.WorkflowPaused {
+				for _, progress := range state.Progress {
+					if progress.StageStatus == dsl.StageStatusInProgress || progress.StageStatus == dsl.StageStatusPending {
+						for _, assigneeID := range progress.StageAssignees {
+							if assigneeID != "" {
+								w[assigneeID]++
+							}
 						}
 					}
 				}
 			}
+			resChan <- result{workloads: w}
+		}(run.WorkflowRun)
+	}
+
+	totalWorkloads := make(map[string]int)
+	for i := 0; i < len(runs); i++ {
+		res := <-resChan
+		if res.workloads != nil {
+			for id, count := range res.workloads {
+				totalWorkloads[id] += count
+			}
 		}
 	}
-	return workloads, nil
+	return totalWorkloads, nil
 }
 
-func (s *WorkflowService) ListRuns(ctx context.Context) ([]repository.WorkflowRun, error) {
-	return s.repo.List(ctx)
+func (s *WorkflowService) ListRuns(ctx context.Context, userID string, isAdmin bool) ([]RunSummary, error) {
+	runs, err := s.repo.List(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	type result struct {
+		summary    RunSummary
+		isAssigned bool
+	}
+	resChan := make(chan result, len(runs))
+
+	for _, run := range runs {
+		go func(r repository.WorkflowRun) {
+			// Use a shorter timeout for status queries during listing to prevent hanging
+			queryCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+			defer cancel()
+
+			state, err := s.GetStatus(queryCtx, r.ID)
+			status := "unknown"
+			if err == nil {
+				status = string(state.Status)
+			}
+
+			isAssigned := isAdmin || userID == ""
+			if !isAssigned && err == nil {
+				for _, dept := range state.Progress {
+					if dept.StageAssignees[dept.CurrentStage] == userID {
+						isAssigned = true
+						break
+					}
+				}
+			}
+
+			resChan <- result{
+				summary: RunSummary{
+					WorkflowRun: r,
+					Status:      status,
+				},
+				isAssigned: isAssigned,
+			}
+		}(run)
+	}
+
+	var filtered []RunSummary
+	for i := 0; i < len(runs); i++ {
+		res := <-resChan
+		if res.isAssigned {
+			filtered = append(filtered, res.summary)
+		}
+	}
+	return filtered, nil
 }
 
 func (s *WorkflowService) UploadDocument(ctx context.Context, workflowID, deptID, stage, filename, userID string) (repository.Document, error) {
