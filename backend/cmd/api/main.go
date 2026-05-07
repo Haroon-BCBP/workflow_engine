@@ -53,12 +53,14 @@ func main() {
 	
 	r.Get("/health", h.HealthCheck)
 	r.Get("/api/v1/users", h.GetUsers)
+	r.Get("/api/v1/workloads", h.GetWorkloads)
 	
 	r.Route("/api/v1/workflows", func(r chi.Router) {
 		r.Use(middleware.Logger)
 		r.Post("/", h.Submit)
 		r.Get("/", h.ListWorkflows)
 		r.Get("/{id}/yaml", h.GetYAML)
+		r.Post("/{id}/start", h.StartWorkflow)
 		r.Post("/{id}/transition", h.Transition)
 		r.Post("/{id}/comment", h.Comment)
 		r.Post("/{id}/route", h.AdminRoute)

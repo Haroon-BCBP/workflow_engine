@@ -115,7 +115,7 @@ const BpmnModelerComponent: React.FC<Props> = ({ onWorkflowStarted }) => {
     try {
       const { xml } = await modelerRef.current.saveXML({ format: true });
       const result = await api.submit(xml);
-      setStatusMsg(`✓ Workflow started: ${result.workflow_id}`);
+      setStatusMsg(`✓ Sent to Admin Queue: ${result.workflow_id}`);
       if (onWorkflowStarted) onWorkflowStarted(result.workflow_id);
     } catch (err: any) {
       setStatusMsg("Error: " + err.message);

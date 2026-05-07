@@ -65,6 +65,22 @@ export const api = {
     return res.json();
   },
 
+  getWorkloads: async () => {
+    const res = await fetch(`${API_BASE}/api/v1/workloads`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
+  startWorkflow: async (id: string, assignments: Record<string, Record<string, { user_id: string; user_name: string }>>, adminId: string) => {
+    const res = await fetch(`${API_BASE}/api/v1/workflows/${id}/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignments, admin_id: adminId }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  },
+
   uploadDocument: async (id: string, deptId: string, stage: string, filename: string, userId: string) => {
     const res = await fetch(`${API_BASE}/api/v1/workflows/${id}/documents`, {
       method: "POST",

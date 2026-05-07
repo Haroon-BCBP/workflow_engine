@@ -52,22 +52,23 @@ type WorkflowState struct {
 type WorkflowStatus string
 
 const (
-	WorkflowRunning  WorkflowStatus = "running"
-	WorkflowApproved WorkflowStatus = "approved"
-	WorkflowRejected WorkflowStatus = "rejected"
-	WorkflowPaused   WorkflowStatus = "paused" // waiting for admin routing after rejection
-	WorkflowPausedXOR WorkflowStatus = "paused_xor" // waiting for admin to select XOR path
+	WorkflowPendingAssignment WorkflowStatus = "pending_assignment"
+	WorkflowRunning           WorkflowStatus = "running"
+	WorkflowApproved          WorkflowStatus = "approved"
+	WorkflowRejected          WorkflowStatus = "rejected"
+	WorkflowPaused            WorkflowStatus = "paused"     // waiting for admin routing after rejection
+	WorkflowPausedXOR         WorkflowStatus = "paused_xor" // waiting for admin to select XOR path
 )
 
 type DepartmentProgress struct {
-	DeptID       string      `json:"dept_id"`
-	Label        string      `json:"label"`
-	CurrentStage StageType   `json:"current_stage"`
-	StageStatus  StageStatus `json:"stage_status"`
-	AssigneeID   string      `json:"assignee_id"`
-	AssigneeName string      `json:"assignee_name"`
-	HasComment   bool        `json:"has_comment"`
-	Comments     []Comment   `json:"comments"`
+	DeptID             string                `json:"dept_id"`
+	Label              string                `json:"label"`
+	CurrentStage       StageType             `json:"current_stage"`
+	StageStatus        StageStatus           `json:"stage_status"`
+	StageAssignees     map[StageType]string  `json:"stage_assignees"`
+	StageAssigneeNames map[StageType]string  `json:"stage_assignee_names"`
+	HasComment         bool                  `json:"has_comment"`
+	Comments           []Comment             `json:"comments"`
 }
 
 type StageStatus string
@@ -110,11 +111,22 @@ type AdminRoutingSignal struct {
 	AdminID string    `json:"admin_id"`
 }
 
+type Assignment struct {
+	UserID   string `json:"user_id"`
+	UserName string `json:"user_name"`
+}
+
+type AdminStartSignal struct {
+	Assignments map[string]map[StageType]Assignment `json:"assignments"` // deptID -> stage -> Assignment
+	AdminID     string                              `json:"admin_id"`
+}
+
 const (
 	TransitionChannel   = "StageTransitionChannel"
 	CommentChannel      = "CommentChannel"
 	DocumentChannel     = "DocumentChannel"
 	AdminRoutingChannel = "AdminRoutingChannel"
+	AdminStartChannel   = "AdminStartChannel"
 	QueryStatus         = "GetWorkflowStatus"
-	TaskQueue           = "workflow-engine-queue"
+	TaskQueue           = "workflow-engine-queue-v2"
 )

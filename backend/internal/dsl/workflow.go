@@ -18,14 +18,16 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 		CurrentStep: 0,
 		Progress:    make(map[string]*DepartmentProgress),
 		Execution:   def.Execution,
-		Status:      WorkflowRunning,
+		Status:      WorkflowPendingAssignment,
 	}
 	for _, d := range def.Departments {
 		state.Progress[d.ID] = &DepartmentProgress{
-			DeptID:       d.ID,
-			Label:        d.Label,
-			CurrentStage: StagePrep,
-			StageStatus:  StageStatusPending,
+			DeptID:             d.ID,
+			Label:              d.Label,
+			CurrentStage:       StagePrep,
+			StageStatus:        StageStatusPending,
+			StageAssignees:     make(map[StageType]string),
+			StageAssigneeNames: make(map[StageType]string),
 		}
 	}
 
@@ -77,7 +79,27 @@ func DSLWorkflow(ctx workflow.Context, def WorkflowDef) (string, error) {
 		}
 	})
 
+	adminStartChan := workflow.GetSignalChannel(ctx, AdminStartChannel)
 	adminChan := workflow.GetSignalChannel(ctx, AdminRoutingChannel)
+
+
+	logger.Info("Workflow pending admin assignment", "name", def.Name)
+	var startSig AdminStartSignal
+	adminStartChan.Receive(ctx, &startSig)
+	if ctx.Err() != nil {
+		return "", ctx.Err()
+	}
+
+	logger.Info("Admin assigned identities and started workflow", "admin", startSig.AdminID)
+	for deptID, stageAssignments := range startSig.Assignments {
+		if progress, ok := state.Progress[deptID]; ok {
+			for stage, assignment := range stageAssignments {
+				progress.StageAssignees[stage] = assignment.UserID
+				progress.StageAssigneeNames[stage] = assignment.UserName
+			}
+		}
+	}
+	state.Status = WorkflowRunning
 
 OuterLoop:
 	for {

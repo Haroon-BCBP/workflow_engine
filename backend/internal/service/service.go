@@ -119,6 +119,37 @@ func (s *WorkflowService) SendAdminRouting(ctx context.Context, workflowID strin
 	return s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.AdminRoutingChannel, sig)
 }
 
+func (s *WorkflowService) SendAdminStart(ctx context.Context, workflowID string, sig dsl.AdminStartSignal) error {
+	return s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.AdminStartChannel, sig)
+}
+
+func (s *WorkflowService) GetWorkloads(ctx context.Context) (map[string]int, error) {
+	runs, err := s.ListRuns(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	workloads := make(map[string]int)
+	for _, run := range runs {
+		state, err := s.GetStatus(ctx, run.ID)
+		if err != nil {
+			continue // Skip errors for individual workflows
+		}
+		if state.Status == dsl.WorkflowRunning || state.Status == dsl.WorkflowPaused {
+			for _, progress := range state.Progress {
+				if progress.StageStatus == dsl.StageStatusInProgress || progress.StageStatus == dsl.StageStatusPending {
+					for _, assigneeID := range progress.StageAssignees {
+						if assigneeID != "" {
+							workloads[assigneeID]++
+						}
+					}
+				}
+			}
+		}
+	}
+	return workloads, nil
+}
+
 func (s *WorkflowService) ListRuns(ctx context.Context) ([]repository.WorkflowRun, error) {
 	return s.repo.List(ctx)
 }

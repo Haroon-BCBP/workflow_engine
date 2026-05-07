@@ -6,6 +6,7 @@ interface WorkflowRun {
   id: string;
   name: string;
   created_at: string;
+  status?: string;
 }
 
 interface Comment {
@@ -28,8 +29,8 @@ interface DepartmentProgress {
   label: string;
   current_stage: string;
   stage_status: string;
-  assignee_id: string;
-  assignee_name: string;
+  stage_assignees: Record<string, string>;
+  stage_assignee_names: Record<string, string>;
   has_comment: boolean;
   comments: Comment[];
 }
@@ -92,6 +93,22 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   const [deptDocs, setDeptDocs] = useState<Record<string, Document[]>>({});
   const [viewDoc, setViewDoc] = useState<Document | null>(null);
 
+  const [workloads, setWorkloads] = useState<Record<string, number>>({});
+  const [activeTab, setActiveTab] = useState<"all" | "admin">("all");
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [assignments, setAssignments] = useState<
+    Record<string, Record<string, { user_id: string; user_name: string }>>
+  >({});
+
+  const loadWorkloads = useCallback(async () => {
+    try {
+      const w = await api.getWorkloads();
+      setWorkloads(w || {});
+    } catch (e: any) {
+      console.error("Failed to load workloads", e);
+    }
+  }, []);
+
   const loadUsers = useCallback(async () => {
     try {
       const data = await api.getUsers();
@@ -126,7 +143,17 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   const loadRuns = useCallback(async () => {
     try {
       const data = await api.listWorkflows();
-      setRuns(data ?? []);
+      const runsWithStatus = await Promise.all(
+        (data ?? []).map(async (r: WorkflowRun) => {
+          try {
+            const st = await api.getStatus(r.id);
+            return { ...r, status: st.status };
+          } catch {
+            return r;
+          }
+        }),
+      );
+      setRuns(runsWithStatus);
     } catch {}
   }, []);
 
@@ -153,6 +180,12 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   }, [loadRuns]);
 
   useEffect(() => {
+    if (activeTab === "admin") {
+      loadWorkloads();
+    }
+  }, [activeTab, loadWorkloads]);
+
+  useEffect(() => {
     if (initialWorkflowId) {
       setSelectedId(initialWorkflowId);
       loadRuns();
@@ -162,7 +195,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
   useEffect(() => {
     if (!selectedId) return;
     loadStatus(selectedId);
-    const interval = setInterval(() => loadStatus(selectedId), 15000);
+    const interval = setInterval(() => loadStatus(selectedId), 2000);
     return () => clearInterval(interval);
   }, [selectedId, loadStatus]);
 
@@ -314,14 +347,76 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
 
   const hasPermission = (deptId: string, stage: string) => {
     if (currentUser?.isAdmin) return true;
-    if (!currentUser?.dept) return false;
-    if (currentUser.dept !== deptId) return false;
+    if (!state?.progress[deptId]) return false;
+    const assignee = state.progress[deptId].stage_assignees?.[stage];
+    return currentUser?.id === assignee;
+  };
+
+  const filteredRuns = runs.filter((r) => {
+    if (activeTab === "admin") {
+      return r.status === "pending_assignment";
+    }
+    return true;
+  });
+
+  const getAvailableUsers = (deptId: string, stage: string) => {
     const roleMap: Record<string, string> = {
       prep: "preparer",
       review: "reviewer",
       approve: "approver",
     };
-    return currentUser.role === roleMap[stage];
+    return users.filter((u) => u.dept === deptId && u.role === roleMap[stage]);
+  };
+
+  const handleOpenAssignModal = () => {
+    // Build auto-assignments based on workloads
+    const initial: Record<
+      string,
+      Record<string, { user_id: string; user_name: string }>
+    > = {};
+    deptList.forEach((dept) => {
+      initial[dept.dept_id] = {};
+      STAGE_ORDER.forEach((stage) => {
+        const avail = getAvailableUsers(dept.dept_id, stage);
+        if (avail.length > 0) {
+          const sorted = [...avail].sort(
+            (a, b) => (workloads[a.id] || 0) - (workloads[b.id] || 0),
+          );
+          initial[dept.dept_id][stage] = {
+            user_id: sorted[0].id,
+            user_name: sorted[0].name,
+          };
+        }
+      });
+    });
+    setAssignments(initial);
+    setShowAssignModal(true);
+  };
+
+  const groupedUsers = useMemo(() => {
+    const groups: Record<string, User[]> = {};
+    users.forEach((u) => {
+      const groupName = u.isAdmin ? "Admins" : u.dept || "Other";
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(u);
+    });
+    return groups;
+  }, [users]);
+
+  const handleStartWorkflow = async () => {
+    if (!selectedId || !currentUser?.isAdmin) return;
+    setActionLoading("start");
+    try {
+      await api.startWorkflow(selectedId, assignments, currentUser.id);
+      showToast("Workflow started with assignments!");
+      setShowAssignModal(false);
+      await loadStatus(selectedId);
+      await loadRuns();
+    } catch (e: any) {
+      showToast("Error: " + e.message);
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   return (
@@ -340,6 +435,55 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
             ↻
           </button>
         </div>
+
+        {currentUser?.isAdmin && (
+          <div
+            className="tab-switcher"
+            style={{
+              display: "flex",
+              margin: "0 1rem 1rem",
+              borderBottom: "1px solid #ddd",
+            }}
+          >
+            <button
+              className={`tab-btn ${activeTab === "all" ? "active" : ""}`}
+              onClick={() => setActiveTab("all")}
+              style={{
+                flex: 1,
+                padding: "0.5rem",
+                background: "none",
+                border: "none",
+                borderBottom:
+                  activeTab === "all"
+                    ? "2px solid #0066cc"
+                    : "2px solid transparent",
+                cursor: "pointer",
+                fontWeight: activeTab === "all" ? "bold" : "normal",
+              }}
+            >
+              All
+            </button>
+            <button
+              className={`tab-btn ${activeTab === "admin" ? "active" : ""}`}
+              onClick={() => setActiveTab("admin")}
+              style={{
+                flex: 1,
+                padding: "0.5rem",
+                background: "none",
+                border: "none",
+                borderBottom:
+                  activeTab === "admin"
+                    ? "2px solid #0066cc"
+                    : "2px solid transparent",
+                cursor: "pointer",
+                fontWeight: activeTab === "admin" ? "bold" : "normal",
+              }}
+            >
+              Admin Queue
+            </button>
+          </div>
+        )}
+
         <div className="user-switcher" style={{ padding: "0 1rem 1rem" }}>
           <label
             style={{
@@ -357,22 +501,22 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
             }
             style={{ width: "100%", padding: "4px" }}
           >
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name}
-              </option>
+            {Object.entries(groupedUsers).map(([groupName, groupUsers]) => (
+              <optgroup key={groupName} label={groupName}>
+                {groupUsers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
-        {runs.length === 0 && (
-          <p className="sidebar-empty">
-            No workflows yet.
-            <br />
-            Submit a diagram from the Modeler.
-          </p>
+        {filteredRuns.length === 0 && (
+          <p className="sidebar-empty">No workflows match the current view.</p>
         )}
         <ul className="workflow-list">
-          {runs.map((run) => (
+          {filteredRuns.map((run) => (
             <li key={run.id}>
               <button
                 type="button"
@@ -420,6 +564,16 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                 >
                   View YAML
                 </button>
+                {state.status === "pending_assignment" &&
+                  currentUser?.isAdmin && (
+                    <button
+                      className="btn-admin"
+                      onClick={handleOpenAssignModal}
+                      id="btn-admin-assign"
+                    >
+                      Assign & Start Workflow
+                    </button>
+                  )}
                 {state.status === "paused" && (
                   <button
                     className="btn-admin"
@@ -480,9 +634,9 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                         <h3 className="dept-label">
                           {dept.label || dept.dept_id}
                         </h3>
-                        {dept.assignee_name && (
+                        {dept.stage_assignee_names?.[dept.current_stage] && (
                           <span className="dept-assignee">
-                            👤 {dept.assignee_name}
+                            👤 {dept.stage_assignee_names[dept.current_stage]}
                           </span>
                         )}
                       </div>
@@ -649,36 +803,51 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                                   key={d.id}
                                   className="comment-item"
                                   style={{
-                                    fontSize: "0.8rem",
-                                    cursor: canOpen ? "pointer" : "not-allowed",
                                     background: "#f8f9fa",
                                     border: "1px solid #ddd",
                                     opacity: canOpen ? 1 : 0.6,
-                                  }}
-                                  onClick={() => {
-                                    if (canOpen) {
-                                      setViewDoc(d);
-                                    } else {
-                                      showToast(
-                                        "You do not have permission to open documents from other departments.",
-                                      );
-                                    }
+                                    padding: 0,
                                   }}
                                 >
-                                  <span
-                                    className="comment-user"
+                                  <button
+                                    onClick={() => {
+                                      if (canOpen) {
+                                        setViewDoc(d);
+                                      } else {
+                                        showToast(
+                                          "You do not have permission to open documents from other departments.",
+                                        );
+                                      }
+                                    }}
                                     style={{
-                                      color: canOpen ? "#0066cc" : "#666",
-                                      textDecoration: canOpen
-                                        ? "underline"
-                                        : "none",
+                                      fontSize: "0.8rem",
+                                      cursor: canOpen
+                                        ? "pointer"
+                                        : "not-allowed",
+                                      background: "transparent",
+                                      border: "none",
+                                      width: "100%",
+                                      textAlign: "left",
+                                      padding: "0.5rem",
+                                      display: "flex",
+                                      gap: "0.5rem",
                                     }}
                                   >
-                                    📄 {d.filename}
-                                  </span>
-                                  <span className="comment-text">
-                                    by {d.user_id} ({d.stage})
-                                  </span>
+                                    <span
+                                      className="comment-user"
+                                      style={{
+                                        color: canOpen ? "#0066cc" : "#666",
+                                        textDecoration: canOpen
+                                          ? "underline"
+                                          : "none",
+                                      }}
+                                    >
+                                      📄 {d.filename}
+                                    </span>
+                                    <span className="comment-text">
+                                      by {d.user_id} ({d.stage})
+                                    </span>
+                                  </button>
                                 </li>
                               );
                             })}
@@ -902,6 +1071,123 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
             <button className="btn-ghost" onClick={() => setShowYaml(false)}>
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {showAssignModal && state && (
+        <div className="modal-overlay">
+          <button
+            type="button"
+            className="modal-backdrop"
+            onClick={() => setShowAssignModal(false)}
+            aria-label="Close modal"
+          />
+          <div className="modal modal-wide" id="assign-modal">
+            <h3>Admin: Assign Users & Start</h3>
+            <p>
+              Review the auto-assigned users based on workloads, or change them
+              manually before starting the workflow.
+            </p>
+            <div
+              className="assignments-form"
+              style={{
+                maxHeight: "60vh",
+                overflowY: "auto",
+                paddingRight: "1rem",
+              }}
+            >
+              {deptList.map((dept) => (
+                <div
+                  key={dept.dept_id}
+                  className="dept-assignment-group"
+                  style={{
+                    marginBottom: "1.5rem",
+                    border: "1px solid #eee",
+                    padding: "1rem",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <h4 style={{ margin: "0 0 1rem 0" }}>
+                    {dept.label || dept.dept_id}
+                  </h4>
+                  {STAGE_ORDER.map((stage) => {
+                    const avail = getAvailableUsers(dept.dept_id, stage);
+                    const currentAssign =
+                      assignments[dept.dept_id]?.[stage]?.user_id || "";
+                    return (
+                      <div
+                        key={stage}
+                        style={{
+                          marginBottom: "0.8rem",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <label
+                          style={{
+                            fontSize: "0.85rem",
+                            fontWeight: "bold",
+                            marginBottom: "0.3rem",
+                          }}
+                        >
+                          {STAGE_LABELS[stage]} ({avail.length} available)
+                        </label>
+                        <select
+                          value={currentAssign}
+                          onChange={(e) => {
+                            const selectedUser = avail.find(
+                              (u) => u.id === e.target.value,
+                            );
+                            if (selectedUser) {
+                              setAssignments((prev) => ({
+                                ...prev,
+                                [dept.dept_id]: {
+                                  ...prev[dept.dept_id],
+                                  [stage]: {
+                                    user_id: selectedUser.id,
+                                    user_name: selectedUser.name,
+                                  },
+                                },
+                              }));
+                            }
+                          }}
+                          style={{ padding: "0.5rem" }}
+                        >
+                          {avail.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name.replace(/\s\(.*\)/, "")} (Workload:{" "}
+                              {workloads[u.id] || 0})
+                            </option>
+                          ))}
+                          {avail.length === 0 && (
+                            <option value="" disabled>
+                              No users match role
+                            </option>
+                          )}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="modal-actions" style={{ marginTop: "1rem" }}>
+              <button
+                className="btn-primary"
+                onClick={handleStartWorkflow}
+                disabled={!!actionLoading}
+              >
+                {actionLoading === "start" ? "Starting..." : "Start Workflow"}
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={() => setShowAssignModal(false)}
+                disabled={!!actionLoading}
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
