@@ -1,43 +1,75 @@
 services:
-  backend-api:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    ports:
+      - "5433:5432"
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=db
+    depends_on:
+      - db
+
+  temporal-ui:
+    image: temporalio/ui:2.27.0
+    ports:
+      - "8082:8080"
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_GRPC_ENDPOINT=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      - temporal
+    restart: on-failure
+
+  backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: workflow-backend-api
-    ports:
-      - "8080:8080"
     environment:
-      - TEMPORAL_HOST=host.docker.internal:7233
+      - TEMPORAL_HOST=temporal:7233
       - DB_PATH=/app/data/workflow_engine.db
       - LISTEN_ADDR=:8080
     volumes:
       - ./backend/data:/app/data
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    depends_on:
+      - temporal
+    restart: on-failure
+    ports:
+      - "8080:8080"
 
-  backend-worker:
+  worker:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: workflow-backend-worker
-    command: ["/app/worker"]
+    command: ["./worker-server"]
     environment:
-      - TEMPORAL_HOST=host.docker.internal:7233
+      - TEMPORAL_HOST=temporal:7233
       - DB_PATH=/app/data/workflow_engine.db
-      - IAM_PATH=/app/config/iam.yaml
     volumes:
       - ./backend/data:/app/data
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
-      - backend-api
+      - temporal
+      - backend
+    restart: on-failure
 
   ui:
     build:
       context: ./UI
       dockerfile: Dockerfile
-    container_name: workflow-ui
     ports:
       - "3000:80"
     depends_on:
-      - backend-api
+      - backend
+    restart: on-failure

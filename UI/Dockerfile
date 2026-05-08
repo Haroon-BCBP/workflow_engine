@@ -2,14 +2,11 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
 RUN npm install
 
 COPY . .
-
-ARG VITE_API_PROXY_TARGET=http://backend-api:8080
-ENV VITE_API_PROXY_TARGET=$VITE_API_PROXY_TARGET
-
+ENV VITE_API_URL=""
 RUN npm run build
 
 FROM nginx:alpine
