@@ -10,7 +10,7 @@ import (
 	"golang.org/x/text/language"
 )
 
-var departmentLabels = map[string]string{
+var defaultDepartmentLabels = map[string]string{
 	"design":        "Design / Engineering",
 	"contracts":     "Contract Management",
 	"procurement":   "Procurement",
@@ -20,6 +20,19 @@ var departmentLabels = map[string]string{
 	"construction":  "Construction",
 	"qa":            "QA / QC",
 	"commissioning": "Commissioning",
+}
+
+type Parser struct {
+	DepartmentLabels map[string]string
+}
+
+func NewParser(labels map[string]string) *Parser {
+	if labels == nil {
+		labels = defaultDepartmentLabels
+	}
+	return &Parser{
+		DepartmentLabels: labels,
+	}
 }
 
 func (p *Parser) ParseXML(xmlData []byte) (*engine.WorkflowDef, error) {
@@ -94,8 +107,10 @@ func (p *Parser) buildDepartmentMap(proc Process) map[string]*engine.DepartmentD
 }
 
 func (p *Parser) getDeptLabel(id string) string {
-	if label, ok := departmentLabels[id]; ok {
-		return label
+	if p.DepartmentLabels != nil {
+		if label, ok := p.DepartmentLabels[id]; ok {
+			return label
+		}
 	}
 	return cases.Title(language.English).String(strings.ReplaceAll(id, "_", " "))
 }

@@ -30,7 +30,7 @@ func New(repo *repository.Repository, tc client.Client, i *iam.IAM) WorkflowServ
 	return &workflowService{
 		repo:           repo,
 		temporalClient: tc,
-		parser:         &bpmn.Parser{},
+		parser:         bpmn.NewParser(nil),
 		iam:            i,
 	}
 }

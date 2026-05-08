@@ -69,4 +69,3 @@ type ZeebeProperty struct {
 	Value string `xml:"value,attr"`
 }
 
-type Parser struct{}
