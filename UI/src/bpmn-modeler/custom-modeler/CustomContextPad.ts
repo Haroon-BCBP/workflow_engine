@@ -1,30 +1,36 @@
 export default class CustomContextPad {
   static readonly $inject = [
-    'config.contextPad',
     'contextPad',
     'create',
     'elementFactory',
     'injector',
-    'translate'
+    'translate',
+    'connect',
+    'popupMenu'
   ];
 
   private readonly create: any;
   private readonly elementFactory: any;
   private readonly injector: any;
   private readonly translate: any;
+  private readonly connect: any;
+  private readonly popupMenu: any;
 
   constructor(
-    _config: any,
     contextPad: any,
     create: any,
     elementFactory: any,
     injector: any,
-    translate: any
+    translate: any,
+    connect: any,
+    popupMenu: any
   ) {
     this.create = create;
     this.elementFactory = elementFactory;
     this.injector = injector;
     this.translate = translate;
+    this.connect = connect;
+    this.popupMenu = popupMenu;
 
     contextPad.registerProvider(this);
   }
@@ -41,6 +47,11 @@ export default class CustomContextPad {
     if (element.type === 'label') {
       return actions;
     }
+
+    const {
+      connect,
+      popupMenu
+    } = this;
 
     function appendAction(type: string, className: string, title: string, options?: any) {
       function appendListener(event: any, element: any) {
@@ -59,7 +70,31 @@ export default class CustomContextPad {
       };
     }
 
-    // Allowed connections/appends
+    actions['connect'] = {
+      group: 'connect',
+      className: 'bpmn-icon-connection-multi',
+      title: translate('Connect using sequence flow'),
+      action: {
+        click: (event: any, element: any) => {
+          connect.start(event, element);
+        },
+        dragstart: (event: any, element: any) => {
+          connect.start(event, element);
+        }
+      }
+    };
+
+    actions['replace'] = {
+      group: 'edit',
+      className: 'bpmn-icon-screw-wrench',
+      title: translate('Change type'),
+      action: {
+        click: (event: any, element: any) => {
+          popupMenu.open(element, 'bpmn-replace', event.position);
+        }
+      }
+    };
+
     if (element.type !== 'bpmn:EndEvent' && element.type !== 'bpmn:Participant' && element.type !== 'bpmn:Lane') {
       actions['append.end-event'] = appendAction(
         'bpmn:EndEvent', 'bpmn-icon-end-event-none', 'Append EndEvent'
@@ -75,7 +110,6 @@ export default class CustomContextPad {
       );
     }
 
-    // Delete is always allowed
     actions['delete'] = {
       group: 'edit',
       className: 'bpmn-icon-trash',
