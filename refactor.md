@@ -29,3 +29,15 @@
   - **Parallel Execution**: Simplified the `runParallel` inner loop for better readability and performance.
   - **Declarative Main Loop**: Refactored the core workflow loop to be more declarative and maintainable.
 - **Stability**: Fixed undefined type errors and restored missing administrative routing functions identified during build verification.
+
+## BPMN Parser Refactoring
+
+- **Explicit Property Alignment**: Eliminated heuristic-based parsing (guessing from lane/task names) in favor of explicit Zeebe properties (`dept_id`, `stage_type`, `role`). This aligns the backend parser directly with the `dept-stage-task.json` template used by the frontend modeler.
+- **Performance Optimization**:
+  - Refactored `getLaneOrder` to use a map-based lookup ($O(N+M)$) instead of a triple-nested loop ($O(N \cdot M \cdot K)$).
+  - Pre-calculated task-to-department mappings to avoid redundant property extraction during BFS and grouping.
+- **Readability & Modularity**:
+  - Modularized `ParseXML` by extracting department map construction and task processing into dedicated methods (`buildDepartmentMap`, `isCommentRequired`).
+  - Decoupled `buildExecutionPlan` by extracting BFS traversal (`findGroupDepts`) and step assembly (`assembleSteps`) logic.
+  - Replaced ad-hoc string manipulation with a central `departmentLabels` map to ensure UI consistency.
+- **Robustness**: Added support for explicit `requires_comment` property overrides while maintaining sane defaults based on stage type.
