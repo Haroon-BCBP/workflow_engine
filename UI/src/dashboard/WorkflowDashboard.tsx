@@ -583,7 +583,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
                       Assign & Start Workflow
                     </button>
                   )}
-                {state.status === "paused" && (
+                {state.status === "paused" && currentUser?.isAdmin && (
                   <button
                     className="btn-admin"
                     onClick={() => setShowAdmin(true)}
@@ -916,7 +916,7 @@ const WorkflowDashboard: React.FC<Props> = ({ initialWorkflowId }) => {
         )}
       </div>
 
-      {showAdmin && state && (
+      {showAdmin && state && currentUser?.isAdmin && (
         <div className="modal-overlay">
           <button
             type="button"

@@ -45,6 +45,10 @@ departments:
     preparer:  [{ user_id: "u-com1", name: "Victor" }]
     reviewer:  [{ user_id: "u-com2", name: "Wendy" }]
     approver:  [{ user_id: "u-com3", name: "Xander" }]
+  contracts:
+    preparer:  [{ user_id: "u-c1", name: "Yara" }]
+    reviewer:  [{ user_id: "u-c2", name: "Zack" }]
+    approver:  [{ user_id: "u-c3", name: "Aaron" }]
 
 admins:
   - { user_id: "admin-1", name: "Admin User" }
