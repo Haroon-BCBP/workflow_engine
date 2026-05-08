@@ -1,4 +1,4 @@
-package dsl
+package workflow
 
 type WorkflowDef struct {
 	Name        string          `yaml:"name"`
@@ -46,6 +46,7 @@ type WorkflowState struct {
 	Progress    map[string]*DepartmentProgress `json:"progress"` // keyed by dept ID
 	Execution   ExecutionPlan                  `json:"execution"`
 	Status      WorkflowStatus                 `json:"status"`
+	Workload    map[string]int                 `json:"workload,omitempty"` // map of userID -> count of active tasks
 	RejectedBy  string                         `json:"rejected_by,omitempty"`
 }
 

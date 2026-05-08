@@ -4,70 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
-
-	_ "modernc.org/sqlite"
 )
 
-type WorkflowRun struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	BPMNXML    string    `json:"bpmn_xml"`
-	DSLYAML    string    `json:"dsl_yaml"`
-	TemporalID string    `json:"temporal_id"`
-	RunID      string    `json:"run_id"`
-	CreatedAt  time.Time `json:"created_at"`
-}
-
-type Document struct {
-	ID         string    `json:"id"`
-	WorkflowID string    `json:"workflow_id"`
-	DeptID     string    `json:"dept_id"`
-	Stage      string    `json:"stage"`
-	Filename   string    `json:"filename"`
-	UserID     string    `json:"user_id"`
-	CreatedAt  time.Time `json:"created_at"`
-}
-
 type Repository struct {
-	db *sql.DB
-}
-
-func New(dsn string) (*Repository, error) {
-	db, err := sql.Open("sqlite", dsn)
-	if err != nil {
-		return nil, fmt.Errorf("repository: open db: %w", err)
-	}
-	r := &Repository{db: db}
-	if err := r.migrate(); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
-func (r *Repository) migrate() error {
-	_, err := r.db.Exec(`
-		CREATE TABLE IF NOT EXISTS workflow_runs (
-			id          TEXT PRIMARY KEY,
-			name        TEXT NOT NULL,
-			bpmn_xml    TEXT NOT NULL,
-			dsl_yaml    TEXT NOT NULL,
-			temporal_id TEXT NOT NULL,
-			run_id      TEXT NOT NULL,
-			created_at  DATETIME NOT NULL
-		);
-		CREATE TABLE IF NOT EXISTS documents (
-			id          TEXT PRIMARY KEY,
-			workflow_id TEXT NOT NULL,
-			dept_id     TEXT NOT NULL,
-			stage       TEXT NOT NULL,
-			filename    TEXT NOT NULL,
-			user_id     TEXT NOT NULL,
-			created_at  DATETIME NOT NULL,
-			FOREIGN KEY(workflow_id) REFERENCES workflow_runs(id) ON DELETE CASCADE
-		);
-	`)
-	return err
+	db *DB
 }
 
 func (r *Repository) Save(ctx context.Context, run WorkflowRun) error {
@@ -149,3 +89,4 @@ func (r *Repository) GetDocuments(ctx context.Context, workflowID, deptID, stage
 	}
 	return docs, rows.Err()
 }
+

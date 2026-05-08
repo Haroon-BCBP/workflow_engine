@@ -7,7 +7,7 @@ import (
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
-	"github.com/Haroon-BCBP/workflow_engine/internal/dsl"
+	engine "github.com/Haroon-BCBP/workflow_engine/internal/workflow"
 )
 
 func main() {
@@ -19,15 +19,15 @@ func main() {
 	}
 	defer tc.Close()
 
-	w := worker.New(tc, dsl.TaskQueue, worker.Options{})
+	w := worker.New(tc, engine.TaskQueue, worker.Options{})
 
-	w.RegisterWorkflow(dsl.DSLWorkflow)
+	w.RegisterWorkflow(engine.DSLWorkflow)
 
-	acts := &dsl.Activities{}
+	acts := &engine.Activities{}
 	w.RegisterActivity(acts.StageStartedActivity)
 	w.RegisterActivity(acts.SaveCommentActivity)
 
-	log.Printf("Worker started on task queue: %s", dsl.TaskQueue)
+	log.Printf("Worker started on task queue: %s", engine.TaskQueue)
 	if err := w.Run(worker.InterruptCh()); err != nil {
 		log.Fatalf("Worker error: %v", err)
 	}

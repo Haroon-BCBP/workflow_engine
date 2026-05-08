@@ -2,276 +2,35 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"time"
 
-	"github.com/google/uuid"
-	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
-	"gopkg.in/yaml.v3"
 
 	"github.com/Haroon-BCBP/workflow_engine/internal/bpmn"
-	"github.com/Haroon-BCBP/workflow_engine/internal/dsl"
+	engine "github.com/Haroon-BCBP/workflow_engine/internal/workflow"
 	"github.com/Haroon-BCBP/workflow_engine/internal/iam"
 	"github.com/Haroon-BCBP/workflow_engine/internal/repository"
 )
 
-type SubmitResult struct {
-	WorkflowID string `json:"workflow_id"`
-	RunID      string `json:"run_id"`
-	YAML       string `json:"yaml"`
+type WorkflowService interface {
+	Submit(ctx context.Context, bpmnXML string) (*repository.SubmitResult, error)
+	GetStatus(ctx context.Context, workflowID string) (*engine.WorkflowState, error)
+	SendTransition(ctx context.Context, workflowID string, sig engine.TransitionSignal) error
+	SendComment(ctx context.Context, workflowID string, sig engine.CommentSignal) error
+	SendAdminRouting(ctx context.Context, workflowID string, sig engine.AdminRoutingSignal) error
+	SendAdminStart(ctx context.Context, workflowID string, sig engine.AdminStartSignal) error
+	GetWorkloads(ctx context.Context) (map[string]int, error)
+	ListRuns(ctx context.Context, userID string, isAdmin bool) ([]repository.RunSummary, error)
+	UploadDocument(ctx context.Context, workflowID, deptID, stage, filename, userID string) (repository.Document, error)
+	GetDocuments(ctx context.Context, workflowID, deptID, stage string) ([]repository.Document, error)
+	GetYAML(ctx context.Context, workflowID string) (string, error)
 }
 
-type RunSummary struct {
-	repository.WorkflowRun
-	Status string `json:"status"`
-}
 
-type WorkflowService struct {
-	repo           *repository.Repository
-	temporalClient client.Client
-	parser         *bpmn.Parser
-	iam            *iam.IAM
-}
-
-func New(repo *repository.Repository, tc client.Client, i *iam.IAM) *WorkflowService {
-	return &WorkflowService{
+func New(repo *repository.Repository, tc client.Client, i *iam.IAM) WorkflowService {
+	return &workflowService{
 		repo:           repo,
 		temporalClient: tc,
 		parser:         &bpmn.Parser{},
 		iam:            i,
 	}
-}
-
-func (s *WorkflowService) Submit(ctx context.Context, bpmnXML string) (*SubmitResult, error) {
-	def, err := s.parser.ParseXML([]byte(bpmnXML))
-	if err != nil {
-		return nil, fmt.Errorf("service: parse bpmn: %w", err)
-	}
-
-	yamlBytes, err := yaml.Marshal(def)
-	if err != nil {
-		return nil, fmt.Errorf("service: marshal yaml: %w", err)
-	}
-	yamlStr := string(yamlBytes)
-
-	workflowID := "wf-" + uuid.New().String()
-	opts := client.StartWorkflowOptions{
-		ID:        workflowID,
-		TaskQueue: dsl.TaskQueue,
-	}
-	we, err := s.temporalClient.ExecuteWorkflow(ctx, opts, dsl.DSLWorkflow, *def)
-	if err != nil {
-		return nil, fmt.Errorf("service: start temporal workflow: %w", err)
-	}
-
-	run := repository.WorkflowRun{
-		ID:         workflowID,
-		Name:       def.Name,
-		BPMNXML:    bpmnXML,
-		DSLYAML:    yamlStr,
-		TemporalID: we.GetID(),
-		RunID:      we.GetRunID(),
-		CreatedAt:  time.Now(),
-	}
-	if err := s.repo.Save(ctx, run); err != nil {
-		return nil, fmt.Errorf("service: save run: %w", err)
-	}
-
-	return &SubmitResult{
-		WorkflowID: workflowID,
-		RunID:      we.GetRunID(),
-		YAML:       yamlStr,
-	}, nil
-}
-
-func (s *WorkflowService) GetStatus(ctx context.Context, workflowID string) (*dsl.WorkflowState, error) {
-	// QueryRejectCondition_NONE allows querying closed (completed/terminated) workflows.
-	// Without this, Temporal returns an error for non-running executions, leaving the UI
-	// stuck on the last known state instead of reflecting the final rejected/approved status.
-	resp, err := s.temporalClient.QueryWorkflowWithOptions(ctx, &client.QueryWorkflowWithOptionsRequest{
-		WorkflowID:           workflowID,
-		QueryType:            dsl.QueryStatus,
-		QueryRejectCondition: enums.QUERY_REJECT_CONDITION_NONE,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("service: query workflow: %w", err)
-	}
-	var state dsl.WorkflowState
-	if err := resp.QueryResult.Get(&state); err != nil {
-		return nil, fmt.Errorf("service: decode state: %w", err)
-	}
-
-	if len(state.Execution.Steps) == 0 {
-		run, err := s.repo.GetByID(ctx, workflowID)
-		if err == nil {
-			var def dsl.WorkflowDef
-			if err := yaml.Unmarshal([]byte(run.DSLYAML), &def); err == nil {
-				state.Execution = def.Execution
-			}
-		}
-	}
-
-	return &state, nil
-}
-
-func (s *WorkflowService) SendTransition(ctx context.Context, workflowID string, sig dsl.TransitionSignal) error {
-	return s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.TransitionChannel, sig)
-}
-
-func (s *WorkflowService) SendComment(ctx context.Context, workflowID string, sig dsl.CommentSignal) error {
-	return s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.CommentChannel, sig)
-}
-
-func (s *WorkflowService) SendAdminRouting(ctx context.Context, workflowID string, sig dsl.AdminRoutingSignal) error {
-	return s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.AdminRoutingChannel, sig)
-}
-
-func (s *WorkflowService) SendAdminStart(ctx context.Context, workflowID string, sig dsl.AdminStartSignal) error {
-	return s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.AdminStartChannel, sig)
-}
-
-func (s *WorkflowService) GetWorkloads(ctx context.Context) (map[string]int, error) {
-	runs, err := s.ListRuns(ctx, "", true)
-	if err != nil {
-		return nil, err
-	}
-
-	type result struct {
-		workloads map[string]int
-	}
-	resChan := make(chan result, len(runs))
-
-	for _, run := range runs {
-		go func(r repository.WorkflowRun) {
-			queryCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-			defer cancel()
-
-			state, err := s.GetStatus(queryCtx, r.ID)
-			if err != nil {
-				resChan <- result{workloads: nil}
-				return
-			}
-
-			w := make(map[string]int)
-			if state.Status == dsl.WorkflowRunning || state.Status == dsl.WorkflowPaused {
-				for _, progress := range state.Progress {
-					if progress.StageStatus == dsl.StageStatusInProgress || progress.StageStatus == dsl.StageStatusPending {
-						for _, assignees := range progress.StageAssignees {
-							for _, assigneeID := range assignees {
-								if assigneeID != "" {
-									w[assigneeID]++
-								}
-							}
-						}
-					}
-				}
-			}
-			resChan <- result{workloads: w}
-		}(run.WorkflowRun)
-	}
-
-	totalWorkloads := make(map[string]int)
-	for i := 0; i < len(runs); i++ {
-		res := <-resChan
-		if res.workloads != nil {
-			for id, count := range res.workloads {
-				totalWorkloads[id] += count
-			}
-		}
-	}
-	return totalWorkloads, nil
-}
-
-func (s *WorkflowService) ListRuns(ctx context.Context, userID string, isAdmin bool) ([]RunSummary, error) {
-	runs, err := s.repo.List(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	type result struct {
-		summary    RunSummary
-		isAssigned bool
-	}
-	resChan := make(chan result, len(runs))
-
-	for _, run := range runs {
-		go func(r repository.WorkflowRun) {
-			// Use a shorter timeout for status queries during listing to prevent hanging
-			queryCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
-			defer cancel()
-
-			state, err := s.GetStatus(queryCtx, r.ID)
-			status := "unknown"
-			if err == nil {
-				status = string(state.Status)
-			}
-
-			isAssigned := isAdmin || userID == ""
-			if !isAssigned && err == nil {
-				userDepts := s.iam.GetUserDepartments(userID)
-				for _, dept := range state.Progress {
-					// Check if user belongs to this department
-					for _, d := range userDepts {
-						if d == dept.DeptID {
-							isAssigned = true
-							break
-						}
-					}
-					if isAssigned {
-						break
-					}
-				}
-			}
-
-			resChan <- result{
-				summary: RunSummary{
-					WorkflowRun: r,
-					Status:      status,
-				},
-				isAssigned: isAssigned,
-			}
-		}(run)
-	}
-
-	var filtered []RunSummary
-	for i := 0; i < len(runs); i++ {
-		res := <-resChan
-		if res.isAssigned {
-			filtered = append(filtered, res.summary)
-		}
-	}
-	return filtered, nil
-}
-
-func (s *WorkflowService) UploadDocument(ctx context.Context, workflowID, deptID, stage, filename, userID string) (repository.Document, error) {
-	doc := repository.Document{
-		ID:         uuid.New().String(),
-		WorkflowID: workflowID,
-		DeptID:     deptID,
-		Stage:      stage,
-		Filename:   filename,
-		UserID:     userID,
-		CreatedAt:  time.Now(),
-	}
-	if err := s.repo.SaveDocument(ctx, doc); err != nil {
-		return doc, err
-	}
-	err := s.temporalClient.SignalWorkflow(ctx, workflowID, "", dsl.DocumentChannel, dsl.DocumentSignal{
-		DeptID: deptID,
-		Stage:  dsl.StageType(stage),
-	})
-	return doc, err
-}
-
-func (s *WorkflowService) GetDocuments(ctx context.Context, workflowID, deptID, stage string) ([]repository.Document, error) {
-	return s.repo.GetDocuments(ctx, workflowID, deptID, stage)
-}
-
-func (s *WorkflowService) GetYAML(ctx context.Context, workflowID string) (string, error) {
-	run, err := s.repo.GetByID(ctx, workflowID)
-	if err != nil {
-		return "", err
-	}
-	return run.DSLYAML, nil
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Haroon-BCBP/workflow_engine/internal/dsl"
+	engine "github.com/Haroon-BCBP/workflow_engine/internal/workflow"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -13,7 +13,7 @@ import (
 
 
 
-func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
+func (p *Parser) ParseXML(xmlData []byte) (*engine.WorkflowDef, error) {
 	var defs Definitions
 	if err := xml.Unmarshal(xmlData, &defs); err != nil {
 		return nil, fmt.Errorf("bpmn: xml unmarshal: %w", err)
@@ -28,7 +28,7 @@ func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
 
 	deptOrder := laneOrder(proc)
 
-	deptMap := make(map[string]*dsl.DepartmentDef)
+	deptMap := make(map[string]*engine.DepartmentDef)
 	for _, task := range proc.UserTasks {
 		props := zeebeProps(task)
 		deptID := props["dept_id"]
@@ -52,13 +52,13 @@ func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
 		}
 
 		if _, ok := deptMap[deptID]; !ok {
-			deptMap[deptID] = &dsl.DepartmentDef{
+			deptMap[deptID] = &engine.DepartmentDef{
 				ID:    deptID,
 				Label: labelFromID(deptID),
 			}
 		}
-		deptMap[deptID].Stages = append(deptMap[deptID].Stages, dsl.StageDef{
-			Type:            dsl.StageType(stageType),
+		deptMap[deptID].Stages = append(deptMap[deptID].Stages, engine.StageDef{
+			Type:            engine.StageType(stageType),
 			Activity:        activityName(stageType),
 			Role:            role,
 			RequiresComment: stageType == "review",
@@ -69,7 +69,7 @@ func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
 		dept.Stages = sortStages(dept.Stages)
 	}
 
-	var departments []dsl.DepartmentDef
+	var departments []engine.DepartmentDef
 	seen := map[string]bool{}
 	for _, id := range deptOrder {
 		if d, ok := deptMap[id]; ok && !seen[id] {
@@ -90,10 +90,10 @@ func (p *Parser) ParseXML(xmlData []byte) (*dsl.WorkflowDef, error) {
 		workflowName = "Untitled Workflow"
 	}
 
-	return &dsl.WorkflowDef{
+	return &engine.WorkflowDef{
 		Name:        workflowName,
 		Version:     "1.0",
-		TaskQueue:   dsl.TaskQueue,
+		TaskQueue:   engine.TaskQueue,
 		Departments: departments,
 		Execution:   execution,
 	}, nil
@@ -200,14 +200,14 @@ func activityName(_ string) string {
 	return "StageStartedActivity"
 }
 
-var stageOrder = map[dsl.StageType]int{
-	dsl.StagePrep:    0,
-	dsl.StageReview:  1,
-	dsl.StageApprove: 2,
+var stageOrder = map[engine.StageType]int{
+	engine.StagePrep:    0,
+	engine.StageReview:  1,
+	engine.StageApprove: 2,
 }
 
-func sortStages(stages []dsl.StageDef) []dsl.StageDef {
-	sorted := make([]dsl.StageDef, len(stages))
+func sortStages(stages []engine.StageDef) []engine.StageDef {
+	sorted := make([]engine.StageDef, len(stages))
 	copy(sorted, stages)
 	for i := 0; i < len(sorted)-1; i++ {
 		for j := i + 1; j < len(sorted); j++ {
@@ -226,13 +226,13 @@ func sortStages(stages []dsl.StageDef) []dsl.StageDef {
 //     All dept IDs encountered across all branches of the same split form one parallel group.
 //  4. Walk deptOrder (lane order from the XML) to emit steps:
 //     sequential depts go into {sequential:[...]}, parallel groups go into {parallel:[...]}.
-func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
+func buildExecutionPlan(proc Process, deptOrder []string) engine.ExecutionPlan {
 	if len(deptOrder) == 0 {
-		return dsl.ExecutionPlan{}
+		return engine.ExecutionPlan{}
 	}
 	if len(proc.Gateways) == 0 {
-		return dsl.ExecutionPlan{
-			Steps: []dsl.ExecutionStep{{Sequential: deptOrder}},
+		return engine.ExecutionPlan{
+			Steps: []engine.ExecutionStep{{Sequential: deptOrder}},
 		}
 	}
 
@@ -264,8 +264,8 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 	}
 
 	if len(splitGWs) == 0 && len(excSplitGWs) == 0 {
-		return dsl.ExecutionPlan{
-			Steps: []dsl.ExecutionStep{{Sequential: deptOrder}},
+		return engine.ExecutionPlan{
+			Steps: []engine.ExecutionStep{{Sequential: deptOrder}},
 		}
 	}
 
@@ -342,8 +342,8 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 		}
 	}
 	if len(groups) == 0 {
-		return dsl.ExecutionPlan{
-			Steps: []dsl.ExecutionStep{{Sequential: deptOrder}},
+		return engine.ExecutionPlan{
+			Steps: []engine.ExecutionStep{{Sequential: deptOrder}},
 		}
 	}
 
@@ -357,7 +357,7 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 		}
 	}
 
-	var steps []dsl.ExecutionStep
+	var steps []engine.ExecutionStep
 	var seqBuf []string
 	emittedGroups := make(map[int]bool)
 
@@ -374,7 +374,7 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 		}
 
 		if len(seqBuf) > 0 {
-			steps = append(steps, dsl.ExecutionStep{Sequential: seqBuf})
+			steps = append(steps, engine.ExecutionStep{Sequential: seqBuf})
 			seqBuf = nil
 		}
 
@@ -390,20 +390,20 @@ func buildExecutionPlan(proc Process, deptOrder []string) dsl.ExecutionPlan {
 		}
 		
 		if groups[gIdx].isExclusive {
-			steps = append(steps, dsl.ExecutionStep{Exclusive: orderedPar})
+			steps = append(steps, engine.ExecutionStep{Exclusive: orderedPar})
 		} else {
-			steps = append(steps, dsl.ExecutionStep{Parallel: orderedPar})
+			steps = append(steps, engine.ExecutionStep{Parallel: orderedPar})
 		}
 		emittedGroups[gIdx] = true
 	}
 
 	if len(seqBuf) > 0 {
-		steps = append(steps, dsl.ExecutionStep{Sequential: seqBuf})
+		steps = append(steps, engine.ExecutionStep{Sequential: seqBuf})
 	}
 
 	if len(steps) == 0 {
-		steps = []dsl.ExecutionStep{{Sequential: deptOrder}}
+		steps = []engine.ExecutionStep{{Sequential: deptOrder}}
 	}
 
-	return dsl.ExecutionPlan{Steps: steps}
+	return engine.ExecutionPlan{Steps: steps}
 }

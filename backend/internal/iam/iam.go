@@ -20,7 +20,7 @@ func Load(path string) (*IAM, error) {
 	return &IAM{cfg: cfg}, nil
 }
 
-// role is one of: "preparer", "reviewer", "approver".
+// role: "preparer", "reviewer", "approver".
 func (i *IAM) GetAssignees(deptID, role string) ([]User, error) {
 	dept, ok := i.cfg.Departments[deptID]
 	if !ok {
@@ -49,6 +49,8 @@ func (i *IAM) IsAdmin(userID string) bool {
 func (i *IAM) AllDeptRoles() map[string]map[string][]User {
 	return i.cfg.Departments
 }
+
+// POC, Store in DB for implementation
 func (i *IAM) GetUserDepartments(userID string) []string {
 	var depts []string
 	for deptID, roles := range i.cfg.Departments {
