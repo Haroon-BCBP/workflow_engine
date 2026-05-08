@@ -1,0 +1,43 @@
+services:
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: workflow-backend-api
+    ports:
+      - "8080:8080"
+    environment:
+      - TEMPORAL_HOST=host.docker.internal:7233
+      - DB_PATH=/app/data/workflow_engine.db
+      - LISTEN_ADDR=:8080
+    volumes:
+      - ./backend/data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  backend-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: workflow-backend-worker
+    command: ["/app/worker"]
+    environment:
+      - TEMPORAL_HOST=host.docker.internal:7233
+      - DB_PATH=/app/data/workflow_engine.db
+      - IAM_PATH=/app/config/iam.yaml
+    volumes:
+      - ./backend/data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend-api
+
+  ui:
+    build:
+      context: ./UI
+      dockerfile: Dockerfile
+    container_name: workflow-ui
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend-api

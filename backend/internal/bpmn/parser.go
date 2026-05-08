@@ -10,9 +10,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-
-
-
 var departmentLabels = map[string]string{
 	"design":        "Design / Engineering",
 	"contracts":     "Contract Management",
